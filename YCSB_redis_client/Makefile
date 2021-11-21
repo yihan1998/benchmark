@@ -1,4 +1,4 @@
-RTE_SDK		= /home/yihan/nus-sys/cetus/dpdk
+RTE_SDK		= /home/yihan/nus-sys/cygnus/dpdk
 RTE_TARGET	= x86_64-native-linuxapp-gcc
 
 CC		= g++
