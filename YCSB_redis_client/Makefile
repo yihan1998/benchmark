@@ -30,7 +30,7 @@ UTIL_OBJ 	= ${UTIL_FLD}/http_parsing.o ${UTIL_FLD}/tdate_parse.o ${UTIL_FLD}/net
 
 # util library and header
 INC 		= -I./ ${UTIL_INC} ${MTCP_INC}
-LIBS 		= ${MTCP_LIB} -lpthread 
+LIBS 		= ${MTCP_LIB} -lpthread -lrt -march=native ${MTCP_FLD}/lib/libmtcp.a -lnuma -lmtcp -lrt -ldl -lgmp
 
 LIBDPDK_CFLAGS := $(shell pkg-config --cflags libdpdk)
 LIBDPDK_LDFLAGS := $(shell pkg-config --libs libdpdk)
