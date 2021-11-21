@@ -218,7 +218,7 @@ double PerformTransaction(struct thread_context * ctx, struct mtcp_epoll_event *
                             }
                         }
                     }
-                } else if (!strcmp(recv_buff, "+OK\r\n", 5)) {
+                } else if (!strcmp(recv_buff, "+OK\r\n")) {
                     
                 }
 
