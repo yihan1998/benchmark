@@ -292,6 +292,8 @@ double PerformTransaction(struct thread_context * ctx, struct mtcp_epoll_event *
 
 struct thread_context * InitializeClientThread(int core){
 	struct thread_context * ctx;
+    
+	mtcp_register_signal(SIGINT, SignalHandler);
 
 	/* affinitize application thread to a CPU core */
 	mtcp_core_affinitize(core);
