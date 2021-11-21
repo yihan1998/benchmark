@@ -354,6 +354,8 @@ inline int Client::ConnectServer(mctx_t mctx, const std::string &ip, int port) {
         return -1;
     }
 
+    fprintf(stdout, " Server connected\n");
+    
     ret = mtcp_setsock_nonblock(mctx, sock);
 	if (ret < 0) {
 		fprintf(stderr, "Failed to set socket in nonblocking mode.\n");
