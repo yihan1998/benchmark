@@ -101,26 +101,18 @@ class Client {
         virtual int SendRequest(char * obuf);
         virtual int ReceiveReply(char * ibuf);
 
-        virtual int ConnectServer(const std::string &ip, int port);
-        virtual int HandleReadEvent(struct conn_info * info);
-        virtual int HandleWriteEvent(struct conn_info * info);
-        virtual int HandleErrorEvent(struct conn_info * info);
+        virtual int ConnectServer(mctx_t mctx, const std::string &ip, int port);
+        virtual int HandleErrorEvent(mctx_t mctx, struct conn_info * info);
 
         virtual ~Client() { }
     
     protected:
     
-        virtual int ReadRequest(KVRequest &request);
-        virtual int ReadModifyWriteRequest(KVRequest &request);
+        virtual int ReadRequest(char * request);
+        virtual int ReadModifyWriteRequest(char * request);
         virtual int ScanRequest(KVRequest &request);
-        virtual int UpdateRequest(KVRequest &request);
-        virtual int InsertRequest(KVRequest &request);
-
-        virtual int ReadReply(KVReply &reply);
-        virtual int ReadModifyWriteReply(KVReply &reply);
-        virtual int ScanReply(KVReply &reply);
-        virtual int UpdateReply(KVReply &reply);
-        virtual int InsertReply(KVReply &reply);
+        virtual int UpdateRequest(char * request);
+        virtual int InsertRequest(char * request);
 
         CoreWorkload &workload_;
 };
@@ -181,44 +173,6 @@ inline int Client::SendRequest(char * obuf) {
 inline int Client::ReceiveReply(char * ibuf) {
     // printf(" >> reply: %s", ibuf);
     return 0;
-}
-
-inline int Client::HandleReadEvent(mctx_t mctx, struct conn_info * info) {
-    // char buff[BUFF_SIZE];
-
-    // int len = read(info->sockfd, buff, BUFF_SIZE);
-    // printf("%s\n", buff);
-
-    // return len;
-    KVReply reply;
-    int len = mtcp_read(mctx, info->sockfd, (char *)&reply, sizeof(reply));
-
-    if (len <= 0) {
-        return len;
-    }
-    
-    // int ret = ReceiveReply(reply);
-
-    return len;
-}
-
-inline int Client::HandleWriteEvent(mctx_t mctx, struct conn_info * info) {
-    // char buff[BUFF_SIZE];
-    // sprintf(buff, "Hello from client(%d)", counter++);
-
-    // int len = send(info->sockfd, buff, BUFF_SIZE, 0);
-    // printf("Hello message sent: %s\n", buff);
-
-    // char buff[BUFF_SIZE];
-    // snprintf(buff, sizeof(request), (char *)&request);
-    // std::cout <<  " Send request: " << buff << "\n" << std::endl;
-
-    KVRequest request;
-    int ret = SendRequest(request);
-    
-    int len = mtcp_write(mctx, info->sockfd, (char *)&request, sizeof(request));
-
-    return len;
 }
 
 inline int Client::HandleErrorEvent(mctx_t mctx, struct conn_info * info) {
@@ -379,7 +333,7 @@ inline int Client::InsertRequest(char * request) {
     return len;
 }
 
-inline int Client::ConnectServer(mctx_t mctx, char * ip, int port) {
+inline int Client::ConnectServer(mctx_t mctx, const std::string &ip, int port) {
     int sock = 0;
     struct sockaddr_in server_addr;
 
