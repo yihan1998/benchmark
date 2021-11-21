@@ -1,7 +1,8 @@
-RTE_SDK = /home/yihan/mtcp/dpdk
-RTE_TARGET = x86_64-native-linuxapp-gcc
+RTE_SDK		= /home/yihan/nus-sys/cetus/dpdk
+RTE_TARGET	= x86_64-native-linuxapp-gcc
 
 CC		= g++
+DPDK	= 1
 CCP		= 1
 CFLAGS	= -std=c++11 -g -O3 -fkeep-inline-functions -march=x86-64 -msse4.1 #-fgnu89-inline
 LDFLAGS	= -lpthread -ltbb -lhiredis
@@ -29,22 +30,31 @@ UTIL_OBJ 	= ${UTIL_FLD}/http_parsing.o ${UTIL_FLD}/tdate_parse.o ${UTIL_FLD}/net
 
 # util library and header
 INC 		= -I./ ${UTIL_INC} ${MTCP_INC}
-LIBS 		= ${MTCP_LIB} -lpthread -lrt -march=native ${MTCP_FLD}/lib/libmtcp.a -lnuma -lmtcp -lrt -ldl -lgmp
+LIBS 		= ${MTCP_LIB} -lpthread 
 
 # dpdk-specific variables
-DPDK_MACHINE_LINKER_FLAGS=${RTE_SDK}/${RTE_TARGET}/lib/ldflags.txt
-DPDK_MACHINE_LDFLAGS=$(shell cat ${DPDK_MACHINE_LINKER_FLAGS})
-DPDK_INC = ${RTE_SDK}/${RTE_TARGET}/include
-INC += -I$(SRC_FLD)/mtcp/io_engine/include -I${DPDK_INC} 
-LIBS += -lrt -march=native ${MTCP_FLD}/lib/libmtcp.a -lnuma -lmtcp -lrt -ldl -lgmp -L${RTE_SDK}/${RTE_TARGET}/lib ${DPDK_MACHINE_LDFLAGS}
+ifeq ($(DPDK),1)
+DPDK_MACHINE_LINKER_FLAGS	=${RTE_SDK}/${RTE_TARGET}/lib/ldflags.txt
+DPDK_MACHINE_LDFLAGS		=$(shell cat ${DPDK_MACHINE_LINKER_FLAGS})
+DPDK_INC	= ${RTE_SDK}/${RTE_TARGET}/include
+INC			+= -I$(SRC_FLD)/io_engine/include -I${DPDK_INC} 
+LIBS		+= -g -O3 -pthread -lrt -march=native ${MTCP_FLD}/lib/libmtcp.a -lnuma -lmtcp -lpthread -lrt -ldl -lgmp -L${RTE_SDK}/${RTE_TARGET}/lib ${DPDK_MACHINE_LDFLAGS}
+endif
+
+ifeq ($(CCP), 1)
+# LIBCCP
+LIBCCP = $(MTCP_FLD)/src/libccp
+LIBS += -L$(LIBCCP) -lccp
+INC += -I$(LIBCCP)
+endif
 
 all: $(SUBDIRS) $(TARGETS)
 
 $(SUBDIRS):
 	$(MAKE) -C $@
 
-$(TARGETS): $(wildcard *.cc) $(OBJECTS) ${MTCP_FLD}/lib/libmtcp.a
-	$(CC) $(CFLAGS) ${UTIL_OBJ} $^ $(INC) ${LIBS} -o $@ $(LDFLAGS)
+$(TARGETS): $(wildcard *.cc) $(OBJECTS)
+	$(CC) $(CFLAGS) ${MTCP_FLD}/lib/libmtcp.a ${UTIL_OBJ} $^ $(INC) ${LIBS} -o $@ $(LDFLAGS)
 
 clean:
 	for dir in $(SUBDIRS); do \
