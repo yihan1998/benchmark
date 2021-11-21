@@ -32,21 +32,10 @@ UTIL_OBJ 	= ${UTIL_FLD}/http_parsing.o ${UTIL_FLD}/tdate_parse.o ${UTIL_FLD}/net
 INC 		= -I./ ${UTIL_INC} ${MTCP_INC}
 LIBS 		= ${MTCP_LIB} -lpthread 
 
-# dpdk-specific variables
-ifeq ($(DPDK),1)
-DPDK_MACHINE_LINKER_FLAGS	=${RTE_SDK}/${RTE_TARGET}/lib/ldflags.txt
-DPDK_MACHINE_LDFLAGS		=$(shell cat ${DPDK_MACHINE_LINKER_FLAGS})
-DPDK_INC	= ${RTE_SDK}/${RTE_TARGET}/include
-INC			+= -I$(SRC_FLD)/io_engine/include -I${DPDK_INC} 
-LIBS		+= -g -O3 -pthread -lrt -march=native ${MTCP_FLD}/lib/libmtcp.a -lnuma -lmtcp -lpthread -lrt -ldl -lgmp -L${RTE_SDK}/${RTE_TARGET}/lib ${DPDK_MACHINE_LDFLAGS}
-endif
-
-ifeq ($(CCP), 1)
-# LIBCCP
-LIBCCP = $(MTCP_FLD)/src/libccp
-LIBS += -L$(LIBCCP) -lccp
-INC += -I$(LIBCCP)
-endif
+LIBDPDK_CFLAGS := $(shell pkg-config --cflags libdpdk)
+LIBDPDK_LDFLAGS := $(shell pkg-config --libs libdpdk)
+CFLAGS += $(LIBDPDK_CFLAGS)
+LDFLAGS += $(LIBDPDK_LDFLAGS)
 
 all: $(SUBDIRS) $(TARGETS)
 
