@@ -36,6 +36,13 @@ struct conn_info {
     int     sockfd;
     int     epfd;
 
+    char    * ibuf;
+    int     ioff;
+
+    char    * obuf;
+    int     ooff;
+    int     oremain;
+
     long long   total_record_ops;
     long long   total_operation_ops;
 
