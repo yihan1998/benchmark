@@ -1,5 +1,5 @@
-RTE_SDK		= /home/yihan/nus-sys/cetus/dpdk
-RTE_TARGET	= x86_64-native-linuxapp-gcc
+RTE_SDK = /home/yihan/mtcp/dpdk
+RTE_TARGET = x86_64-native-linuxapp-gcc
 
 CC		= g++
 DPDK	= 1
@@ -32,10 +32,12 @@ UTIL_OBJ 	= ${UTIL_FLD}/http_parsing.o ${UTIL_FLD}/tdate_parse.o ${UTIL_FLD}/net
 INC 		= -I./ ${UTIL_INC} ${MTCP_INC}
 LIBS 		= ${MTCP_LIB} -lpthread -lrt -march=native ${MTCP_FLD}/lib/libmtcp.a -lnuma -lmtcp -lrt -ldl -lgmp
 
-LIBDPDK_CFLAGS := $(shell pkg-config --cflags libdpdk)
-LIBDPDK_LDFLAGS := $(shell pkg-config --libs libdpdk)
-CFLAGS += $(LIBDPDK_CFLAGS)
-LDFLAGS += $(LIBDPDK_LDFLAGS)
+# dpdk-specific variables
+DPDK_MACHINE_LINKER_FLAGS=${RTE_SDK}/${RTE_TARGET}/lib/ldflags.txt
+DPDK_MACHINE_LDFLAGS=$(shell cat ${DPDK_MACHINE_LINKER_FLAGS})
+DPDK_INC = ${RTE_SDK}/${RTE_TARGET}/include
+INC += -I$(SRC_FLD)/mtcp/io_engine/include -I${DPDK_INC} 
+LIBS += -lrt -march=native ${MTCP_FLD}/lib/libmtcp.a -lnuma -lmtcp -lrt -ldl -lgmp -L${RTE_SDK}/${RTE_TARGET}/lib ${DPDK_MACHINE_LDFLAGS}
 
 all: $(SUBDIRS) $(TARGETS)
 
