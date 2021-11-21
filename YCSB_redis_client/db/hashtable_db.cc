@@ -116,6 +116,8 @@ int HashtableDB::Update(const std::string &table, const std::string &key,
         const char * old = field_table->Update(key.c_str(), value.c_str());
         if (!old) {
             field_table->Insert(key.c_str(), value.c_str());
+        } else {
+          DeleteString(old);
         }
     }
     return DB::kOK;
@@ -150,6 +152,7 @@ int HashtableDB::Insert(const std::string &table, const std::string &key,
     const char * insert_value = CopyString(kv_pair.second);
     bool ok = field_table->Insert(kv_pair.first.c_str(), insert_value);
     if (!ok) {
+        DeleteString(insert_value);
         return DB::kErrorConflict;
     }
 

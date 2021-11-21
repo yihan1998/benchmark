@@ -22,7 +22,7 @@ const string CoreWorkload::TABLENAME_PROPERTY = "table";
 const string CoreWorkload::TABLENAME_DEFAULT = "usertable";
 
 const string CoreWorkload::VALUE_LENGTH_PROPERTY = "valuelength";
-const string CoreWorkload::VALUE_LENGTH_DEFAULT = "100";
+const string CoreWorkload::VALUE_LENGTH_DEFAULT = "32";
 
 const string CoreWorkload::READ_PROPORTION_PROPERTY = "readproportion";
 const string CoreWorkload::READ_PROPORTION_DEFAULT = "0.95";
