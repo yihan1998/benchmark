@@ -24,8 +24,10 @@
 #include <string.h>
 #include <getopt.h>
 
-#include <sys/epoll.h>
 #include <sys/timerfd.h>
+
+#include <mtcp_api.h>
+#include <mtcp_epoll.h>
 
 #define MAX_CONNECT 4100
 #define MAX_EVENTS  8192
@@ -332,7 +334,7 @@ int main(const int argc, const char *argv[]) {
 
     /* Create epoll fd */
 	ctx->ep = mtcp_epoll_create(ctx->mctx, MAX_EVENTS);
-    
+
     epfd = ctx->ep;
 
     /* Initialize epoll event array */
