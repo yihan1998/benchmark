@@ -22,7 +22,7 @@
 
 #include <fcntl.h>
 
-#include <cgynus.h>
+#include <cygnus.h>
 #include <cygnus_api.h>
 
 #define BUFF_SIZE   1024
