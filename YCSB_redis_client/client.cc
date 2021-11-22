@@ -284,8 +284,8 @@ void * DelegateClient(void * arg) {
 
     int record_total_ops = stoi(props[ycsbc::CoreWorkload::RECORD_COUNT_PROPERTY]);
     int operation_total_ops = stoi(props[ycsbc::CoreWorkload::OPERATION_COUNT_PROPERTY]);
-    fprintf(stdout, " [core %d] # Total records (K) :\t %.2f \n", core_id, (double)record_total_ops / 1000.0);  
-    fprintf(stdout, " [core %d] # Total transactions (K) :\t %.2f\n", core_id, (double)operation_total_ops / 1000.0);  
+    fprintf(stdout, " [core %d] # Total records (K) :\t %.2f \n", lcore_id, (double)record_total_ops / 1000.0);  
+    fprintf(stdout, " [core %d] # Total transactions (K) :\t %.2f\n", lcore_id, (double)operation_total_ops / 1000.0);  
 
     // double duration = DelegateClient(db, &wl, record_total_ops, operation_total_ops, num_flows);
 
