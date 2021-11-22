@@ -22,10 +22,16 @@
 
 #include <fcntl.h>
 
-#include <cygnus.h>
-#include <cygnus_api.h>
+extern "C"
+{
+#include "cetus.h"
+#include "cetus_api.h"
 
-#include <mthread.h>
+#include "mthread.h"
+#include "mthread_mutex.h"
+
+#include "sail.h"
+}
 
 #define BUFF_SIZE   1024
 

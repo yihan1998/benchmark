@@ -37,7 +37,7 @@ __thread struct conn_info * info;
 
 void UsageMessage(const char *command);
 bool StrStartWith(const char *str, const char *pre);
-string ParseCommandLine(int argc, const char *argv[], utils::Properties &props);
+string ParseCommandLine(int argc, char *argv[], utils::Properties &props);
 
 double LoadRecord(int epfd, struct cygnus_epoll_event * events, ycsbc::Client &client, const int num_record_ops, const int num_operation_ops, const int port, const int num_flows) {
     int record_per_flow = num_record_ops / num_flows;
@@ -308,7 +308,7 @@ void * DelegateClient(void * arg) {
     struct cygnus_epoll_event * events;
 
     /* Create epoll fd */
-    epfd = cygnus_epoll_create1(0);
+    epfd = cygnus_epoll_create(0);
 
     /* Initialize epoll event array */
     events = (struct cygnus_epoll_event *)calloc(MAX_EVENTS, sizeof(struct cygnus_epoll_event));
@@ -413,7 +413,7 @@ const struct option options[] = {
         .val = CORE_ID},
 };
 
-string ParseCommandLine(int argc, const char *argv[], utils::Properties &props) {
+string ParseCommandLine(int argc, char *argv[], utils::Properties &props) {
     int ret, done = 0;
     char * end;
     optind = 1;
@@ -422,7 +422,7 @@ string ParseCommandLine(int argc, const char *argv[], utils::Properties &props) 
     string strarg;
 
     while (!done) {
-        ret = getopt_long(argc, (char * const *)argv, "", options, NULL);
+        ret = getopt_long(argc, argv, "", options, NULL);
         switch (ret) {
             case PORT:
                 strarg.assign(optarg);
