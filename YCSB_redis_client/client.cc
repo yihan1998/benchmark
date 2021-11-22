@@ -239,9 +239,14 @@ double PerformTransaction(int epfd, struct cygnus_epoll_event * events, ycsbc::C
                             }
                         }
                     }
+                } else if (!strcmp(info->ibuf, "+OK\r\n")) {
+
+                } else {
+                    perror(" unrecognized reply format");
+                    exit(1);
                 }
                 
-                // printf(" [%s:%d] receive reply: %s", __func__, __LINE__, info->ibuf);
+                printf(" [%s:%d] receive reply: %s", __func__, __LINE__, info->ibuf);
 
                 client.ReceiveReply(info->ibuf);
 
