@@ -381,7 +381,7 @@ enum cfg_params {
     PORT,
     WORKLOAD,
     FLOWS,
-    lcore_id,
+    CORE_ID,
 };
 
 const struct option options[] = {
@@ -397,10 +397,10 @@ const struct option options[] = {
         .has_arg = required_argument,
         .flag = NULL, 
         .val = FLOWS},
-    {   .name = "lcore_id", 
+    {   .name = "core_id", 
         .has_arg = required_argument,
         .flag = NULL, 
-        .val = lcore_id},
+        .val = CORE_ID},
 };
 
 string ParseCommandLine(int argc, char *argv[], utils::Properties &props) {
@@ -428,10 +428,10 @@ string ParseCommandLine(int argc, char *argv[], utils::Properties &props) {
                 cout.flush();
                 break;
 
-            case lcore_id:
+            case CORE_ID:
                 strarg.assign(optarg);
-                props.SetProperty("lcore_id", strarg);
-                cout << " Core id: " << props["lcore_id"] << endl;
+                props.SetProperty("core_id", strarg);
+                cout << " Core id: " << props["core_id"] << endl;
                 cout.flush();
                 break;
 
@@ -454,7 +454,7 @@ string ParseCommandLine(int argc, char *argv[], utils::Properties &props) {
     }
 
     fprintf(stdout, " [core %s] port: %s, flows: %s, workload: %s\n", \
-                    props["lcore_id"].c_str(), props["port"].c_str(), props["flows"].c_str(), filename.c_str());
+                    props["core_id"].c_str(), props["port"].c_str(), props["flows"].c_str(), filename.c_str());
 
     return filename;
 }
