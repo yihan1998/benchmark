@@ -25,6 +25,8 @@
 #include <cygnus.h>
 #include <cygnus_api.h>
 
+#include <mthread.h>
+
 #define BUFF_SIZE   1024
 
 #define TABLE_NAME_SIZE 16
