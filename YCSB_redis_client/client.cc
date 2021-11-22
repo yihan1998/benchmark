@@ -308,7 +308,7 @@ void * DelegateClient(void * arg) {
     double load_duration = 0.0;
     load_duration = LoadRecord(epfd, events, client, record_total_ops, operation_total_ops, port, num_flows);
 
-    fprintf(stdout, " [core %d] loaded records done! \n", core_id);  
+    fprintf(stdout, " [core %d] loaded records done! \n", lcore_id);  
 
     double transaction_duration = 0.0;
     transaction_duration = PerformTransaction(epfd, events, client);
@@ -316,7 +316,7 @@ void * DelegateClient(void * arg) {
     char output[256];
 
     char output_file_name[32];
-	sprintf(output_file_name, "throughput_core_%d.txt", core_id);
+	sprintf(output_file_name, "throughput_core_%d.txt", lcore_id);
 
 	FILE * output_file = fopen(output_file_name, "a+");
     if (!output_file) {
@@ -324,7 +324,7 @@ void * DelegateClient(void * arg) {
     }
     
     sprintf(output, " [core %d] # Transaction throughput : %.2f (KTPS) \t %s \t %d\n", \
-                    core_id, operation_total_ops / transaction_duration / 1000, \
+                    lcore_id, operation_total_ops / transaction_duration / 1000, \
                     file_name.c_str(), num_flows);
 
     fprintf(stdout, "%s", output);
@@ -381,7 +381,7 @@ enum cfg_params {
     PORT,
     WORKLOAD,
     FLOWS,
-    CORE_ID,
+    lcore_id,
 };
 
 const struct option options[] = {
@@ -397,10 +397,10 @@ const struct option options[] = {
         .has_arg = required_argument,
         .flag = NULL, 
         .val = FLOWS},
-    {   .name = "core_id", 
+    {   .name = "lcore_id", 
         .has_arg = required_argument,
         .flag = NULL, 
-        .val = CORE_ID},
+        .val = lcore_id},
 };
 
 string ParseCommandLine(int argc, char *argv[], utils::Properties &props) {
@@ -428,10 +428,10 @@ string ParseCommandLine(int argc, char *argv[], utils::Properties &props) {
                 cout.flush();
                 break;
 
-            case CORE_ID:
+            case lcore_id:
                 strarg.assign(optarg);
-                props.SetProperty("core_id", strarg);
-                cout << " Core id: " << props["core_id"] << endl;
+                props.SetProperty("lcore_id", strarg);
+                cout << " Core id: " << props["lcore_id"] << endl;
                 cout.flush();
                 break;
 
@@ -454,7 +454,7 @@ string ParseCommandLine(int argc, char *argv[], utils::Properties &props) {
     }
 
     fprintf(stdout, " [core %s] port: %s, flows: %s, workload: %s\n", \
-                    props["core_id"].c_str(), props["port"].c_str(), props["flows"].c_str(), filename.c_str());
+                    props["lcore_id"].c_str(), props["port"].c_str(), props["flows"].c_str(), filename.c_str());
 
     return filename;
 }
