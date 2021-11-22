@@ -80,7 +80,7 @@ int ConnectServer(int epfd, char * server_ip, uint16_t port, const int num_recor
     return sock;
 }
 
-double LoadRecord(int epfd, struct cygnus_epoll_event * events, ycsbc::Client &client, const int num_record_ops, const int num_operation_ops, const int port, const int num_flows) {
+double LoadRecord(int epfd, struct cygnus_epoll_event * events, ycsbc::Client * client, const int num_record_ops, const int num_operation_ops, const int port, const int num_flows) {
     int record_per_flow = num_record_ops / num_flows;
     int operation_per_flow = num_operation_ops / num_flows;
 
@@ -115,7 +115,7 @@ double LoadRecord(int epfd, struct cygnus_epoll_event * events, ycsbc::Client &c
             struct conn_info * info = (struct conn_info *)(events[i].data.ptr);
             int ret;
             if ((events[i].events & CYGNUS_EPOLLERR)) {
-                client.HandleErrorEvent(info);
+                client->HandleErrorEvent(info);
             }
             
             if ((events[i].events & CYGNUS_EPOLLIN)) {
@@ -128,7 +128,7 @@ double LoadRecord(int epfd, struct cygnus_epoll_event * events, ycsbc::Client &c
                 if (strchr(info->ibuf,'\r\n')) {
                     printf(" [%s:%d] receive reply: %s", __func__, __LINE__, info->ibuf);
 
-                    client.ReceiveReply(info->ibuf);
+                    client->ReceiveReply(info->ibuf);
 
                     info->ioff = 0;
 
@@ -151,7 +151,7 @@ double LoadRecord(int epfd, struct cygnus_epoll_event * events, ycsbc::Client &c
                 }
             } else if ((events[i].events & CYGNUS_EPOLLOUT)) {
                 if (info->oremain == 0) {
-                    info->oremain = client.InsertRecord(info->obuf);
+                    info->oremain = client->InsertRecord(info->obuf);
                     info->ooff = 0;
                     // printf(" [%s:%d] new request: %d, %.*s", __func__, __LINE__, info->oremain, info->oremain, info->obuf);
                 }
@@ -188,7 +188,7 @@ double LoadRecord(int epfd, struct cygnus_epoll_event * events, ycsbc::Client &c
     return duration;
 }
 
-double PerformTransaction(int epfd, struct cygnus_epoll_event * events, ycsbc::Client &client) {
+double PerformTransaction(int epfd, struct cygnus_epoll_event * events, ycsbc::Client * client) {
     int done = 0;
 
     utils::Timer<double> timer;
@@ -215,11 +215,11 @@ double PerformTransaction(int epfd, struct cygnus_epoll_event * events, ycsbc::C
             struct conn_info * info = (struct conn_info *)(events[i].data.ptr);
             int ret;
             if ((events[i].events & CYGNUS_EPOLLERR)) {
-                client.HandleErrorEvent(info);
+                client->HandleErrorEvent(info);
             }
             
             if ((events[i].events & CYGNUS_EPOLLIN)) {
-                int len = read(info->sockfd, info->ibuf + info->ioff, 1024*16 - info->ioff);
+                int len = cygnus_read(info->sockfd, info->ibuf + info->ioff, 1024*16 - info->ioff);
                 // printf(" [%s:%d] receive len: %d, ioff: %d\n", __func__, __LINE__, len, info->ioff);
 
                 if (len > 0) {
@@ -248,7 +248,7 @@ double PerformTransaction(int epfd, struct cygnus_epoll_event * events, ycsbc::C
                 
                 printf(" [%s:%d] receive reply: %s", __func__, __LINE__, info->ibuf);
 
-                client.ReceiveReply(info->ibuf);
+                client->ReceiveReply(info->ibuf);
 
                 info->ioff = 0;
                 oks++;
@@ -271,7 +271,7 @@ double PerformTransaction(int epfd, struct cygnus_epoll_event * events, ycsbc::C
                 }
             } else if ((events[i].events & CYGNUS_EPOLLOUT)) {
                 if (info->oremain == 0) {
-                    info->oremain = client.SendRequest(info->obuf);
+                    info->oremain = client->SendRequest(info->obuf);
                     info->ooff = 0;
                     // printf(" [%s:%d] new request: %d, %.*s", __func__, __LINE__, info->oremain, info->oremain, info->obuf);
                 }
@@ -345,12 +345,12 @@ void * DelegateClient(void * arg) {
     int port = stoi(props.GetProperty("port", "80"));
 
     double load_duration = 0.0;
-    load_duration = LoadRecord(epfd, events, client, record_total_ops, operation_total_ops, port, num_flows);
+    load_duration = LoadRecord(epfd, events, &client, record_total_ops, operation_total_ops, port, num_flows);
 
     fprintf(stdout, " [core %d] loaded records done! \n", lcore_id);  
 
     double transaction_duration = 0.0;
-    transaction_duration = PerformTransaction(epfd, events, client);
+    transaction_duration = PerformTransaction(epfd, events, &client);
 
     // for (int i = 0; i < num_ops; ++i) {
     //   oks += client.DoTransaction();
