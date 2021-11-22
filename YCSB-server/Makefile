@@ -32,7 +32,7 @@
 
 CXX = g++
 
-SRC_DIR		:= /home/yihan-18/nus-sys/cetus
+SRC_DIR		:= /home/yihan-18/nus-sys/cygnus
 
 RUNTIME_DIR	= $(SRC_DIR)/Cetus
 THREAD_DIR	= $(SRC_DIR)/mthread
