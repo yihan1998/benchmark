@@ -1,11 +1,3 @@
-//
-//  ycsbc.cc
-//  YCSB-C
-//
-//  Created by Jinglei Ren on 12/19/14.
-//  Copyright (c) 2014 Jinglei Ren <jinglei@ren.systems>.
-//
-
 #include <cstring>
 #include <string>
 #include <iostream>
@@ -14,30 +6,73 @@
 #include "core/utils.h"
 #include "core/timer.h"
 #include "core/client.h"
-#include "core/core_workload.h"
-// #include "db/db_factory.h"
 
 #include <stdio.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
 #include <unistd.h>
 #include <string.h>
 #include <getopt.h>
-
-#include <sys/epoll.h>
-#include <sys/timerfd.h>
 
 #define MAX_CONNECT 4100
 #define MAX_EVENTS  8192
 
 using namespace std;
 
-__thread int num_conn = 0;
-__thread struct conn_info * info;
+DEFINE_PER_LCORE(int, num_conn);
+DEFINE_PER_LCORE(struct conn_info *, info);
 
 void UsageMessage(const char *command);
 bool StrStartWith(const char *str, const char *pre);
-string ParseCommandLine(int argc, char *argv[], utils::Properties &props);
+string ParseCommandLine(int argc, const char *argv[], utils::Properties &props);
+
+int ConnectServer(int epfd, char * server_ip, uint16_t port, const int num_record_ops, const int num_operation_ops) {
+    int sock;
+
+    struct sockaddr_in server_addr;
+
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(port);
+    server_addr.sin_addr.s_addr = inet_addr(server_ip);
+
+    sock = cygnus_socket(AF_INET, SOCK_STREAM, 0);
+    if(sock == -1) {
+        std::cerr <<  " allocate socket failed! " << std::endl;
+        exit(1);
+    }
+
+    if(cygnus_connect(sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0){
+        std::cerr <<  " connect server failed! " << std::endl;
+        exit(1);
+    }
+
+    if (cygnus_fcntl(sock, F_SETFL, O_NONBLOCK) == -1) {
+        std::cerr <<  " cygnus_fcntl() set sock to non-block failed! " << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    struct conn_info * conn_info = &info[num_conn];
+    conn_info->sockfd = sock;
+    conn_info->epfd = epfd;
+    
+    conn_info->total_record_ops = num_record_ops;
+    conn_info->total_operation_ops = num_operation_ops;
+
+    conn_info->actual_record_ops = conn_info->actual_operation_ops = 0;
+
+    num_conn++;
+
+    struct cygnus_epoll_event ev;
+    ev.events = CETUS_EPOLLIN | CETUS_EPOLLOUT;
+    ev.data.ptr = conn_info;
+
+    int ret;
+
+    if ((ret = cygnus_epoll_ctl(epfd, CETUS_EPOLL_CTL_ADD, sock, &ev)) == -1) {
+        std::cerr <<  " cygnus_epoll_ctl() failed! " << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    return sock;
+}
 
 double LoadRecord(int epfd, struct cygnus_epoll_event * events, ycsbc::Client &client, const int num_record_ops, const int num_operation_ops, const int port, const int num_flows) {
     int record_per_flow = num_record_ops / num_flows;
@@ -54,51 +89,31 @@ double LoadRecord(int epfd, struct cygnus_epoll_event * events, ycsbc::Client &c
 
     timer.Start();
 
+    struct timeval log_time;
+    gettimeofday(&log_time, NULL);
+
+    int sec_send = 0;
+    int sec_recv = 0;
+
     while(!done) {
         while(num_conn < num_flows) {
             /* Connect server */
-            int sock;
-            if ((sock = client.ConnectServer("10.0.1.1", port)) > 0) {
-                // fprintf(stdout, " [%s] connect server through sock %d\n", __func__, sock);
-                struct conn_info * conn_info = &info[num_conn];
-                conn_info->sockfd = sock;
-                conn_info->epfd = epfd;
-
-                conn_info->ibuf = (char *)calloc(16, 1024);
-                conn_info->ioff = 0;
-
-                conn_info->obuf = (char *)calloc(16, 1024);
-                conn_info->ooff = 0;
-
-                conn_info->total_record_ops = record_per_flow;
-                conn_info->total_operation_ops = operation_per_flow;
-
-                conn_info->actual_record_ops = conn_info->actual_operation_ops = 0;
-
-                num_conn++;
-
-                struct cygnus_epoll_event ev;
-                ev.events = CYGNUS_EPOLLIN | CYGNUS_EPOLLOUT;
-                ev.data.ptr = conn_info;
-                cygnus_epoll_ctl(epfd, CYGNUS_EPOLL_CTL_ADD, sock, &ev);
-            } else {
-                fprintf(stderr, " [%s] connect server failed!", __func__);
-                exit(1);
+            if((ConnectServer(epfd, "10.0.0.1", port, record_per_flow, operation_per_flow)) < 0) {
+                break;
             }
         }
 
-        nevents = cygnus_epoll_wait(epfd, events, MAX_EVENTS, -1);
+        nevents = cygnus_epoll_wait(epfd, events, NR_CETUS_EPOLL_EVENTS, -1);
 
         for (int i = 0; i < nevents; i++) {
             struct conn_info * info = (struct conn_info *)(events[i].data.ptr);
             int ret;
-            if ((events[i].events & CYGNUS_EPOLLERR)) {
+            if ((events[i].events & CETUS_EPOLLERR)) {
                 client.HandleErrorEvent(info);
             }
             
-            if ((events[i].events & CYGNUS_EPOLLIN)) {
-                int len = cygnus_read(info->sockfd, info->ibuf + info->ioff, 1024*16 - info->ioff);
-                // printf(" [%s:%d] receive len: %d\n", __func__, __LINE__, len);
+            if ((events[i].events & CETUS_EPOLLIN)) {
+                int len = cygnus_read(info->sockfd, info->ibuf + info->ioff, 1024*16 - info->ioff); 
 
                 if (len > 0) {
                     info->ioff += len;
@@ -121,12 +136,14 @@ double LoadRecord(int epfd, struct cygnus_epoll_event * events, ycsbc::Client &c
                     }
                     
                     struct cygnus_epoll_event ev;
-                    ev.events = CYGNUS_EPOLLIN | CYGNUS_EPOLLOUT;
+                    ev.events = CETUS_EPOLLIN | CETUS_EPOLLOUT;
                     ev.data.ptr = info;
-
-                    cygnus_epoll_ctl(info->epfd, CYGNUS_EPOLL_CTL_MOD, info->sockfd, &ev);
+                    if ((cygnus_epoll_ctl(info->epfd, CETUS_EPOLL_CTL_MOD, info->sockfd, &ev)) == -1) {
+                        fprintf(stdout, "cygnus_epoll_ctl: wait modify error");
+                        exit(EXIT_FAILURE);
+                    }
                 }
-            } else if ((events[i].events & CYGNUS_EPOLLOUT)) {
+            } else if ((events[i].events & CETUS_EPOLLOUT)) {
                 if (info->oremain == 0) {
                     info->oremain = client.InsertRecord(info->obuf);
                     info->ooff = 0;
@@ -134,21 +151,20 @@ double LoadRecord(int epfd, struct cygnus_epoll_event * events, ycsbc::Client &c
                 }
 
                 int len = cygnus_write(info->sockfd, info->obuf + info->ooff, info->oremain);
-                // printf(" [%s:%d] send len: %d\n", __func__, __LINE__, len);
-
+                
                 if(len > 0) {
                     info->ooff += len;
                     info->oremain -= len;
                     if (info->oremain == 0) {
                         struct cygnus_epoll_event ev;
-                        ev.events = CYGNUS_EPOLLIN;
+                        ev.events = CETUS_EPOLLIN;
                         ev.data.ptr = info;
-
-                        cygnus_epoll_ctl(info->epfd, CYGNUS_EPOLL_CTL_MOD, info->sockfd, &ev);
+                        if (ret = (cygnus_epoll_ctl(info->epfd, CETUS_EPOLL_CTL_MOD, info->sockfd, &ev)) == -1) {
+                            fprintf(stdout, "cygnus_epoll_ctl: wait modify error");
+                            exit(EXIT_FAILURE);
+                        }
                     }
                 }
-            } else {
-                printf(" >> unknown event!\n");
             }
         }
     }
@@ -156,12 +172,11 @@ double LoadRecord(int epfd, struct cygnus_epoll_event * events, ycsbc::Client &c
     duration = timer.End();
 
     for (int i = 0; i < num_conn; i++) {
-        info[i].ioff = info[i].ooff = info[i].oremain = 0;
         struct cygnus_epoll_event ev;
-        ev.events = CYGNUS_EPOLLIN | CYGNUS_EPOLLOUT;
+        ev.events = CETUS_EPOLLIN | CETUS_EPOLLOUT;
         ev.data.ptr = &info[i];
 
-        cygnus_epoll_ctl(info[i].epfd, CYGNUS_EPOLL_CTL_MOD, info[i].sockfd, &ev);
+        cygnus_epoll_ctl(info[i].epfd, CETUS_EPOLL_CTL_MOD, info[i].sockfd, &ev);
     }
     
     return duration;
@@ -181,18 +196,24 @@ double PerformTransaction(int epfd, struct cygnus_epoll_event * events, ycsbc::C
 
     timer.Start();
 
+    struct timeval log_time;
+    gettimeofday(&log_time, NULL);
+
+    int sec_send = 0;
+    int sec_recv = 0;
+
     while(!done) {
-        nevents = cygnus_epoll_wait(epfd, events, MAX_EVENTS, -1);
+        nevents = cygnus_epoll_wait(epfd, events, NR_CETUS_EPOLL_EVENTS, -1);
 
         for (int i = 0; i < nevents; i++) {
             struct conn_info * info = (struct conn_info *)(events[i].data.ptr);
             int ret;
-            if ((events[i].events & CYGNUS_EPOLLERR)) {
+            if ((events[i].events & CETUS_EPOLLERR)) {
                 client.HandleErrorEvent(info);
             }
             
-            if ((events[i].events & CYGNUS_EPOLLIN)) {
-                int len = cygnus_read(info->sockfd, info->ibuf + info->ioff, 1024*16 - info->ioff);
+            if ((events[i].events & CETUS_EPOLLIN)) {
+                int len = read(info->sockfd, info->ibuf + info->ioff, 1024*16 - info->ioff);
                 // printf(" [%s:%d] receive len: %d, ioff: %d\n", __func__, __LINE__, len, info->ioff);
 
                 if (len > 0) {
@@ -229,44 +250,44 @@ double PerformTransaction(int epfd, struct cygnus_epoll_event * events, ycsbc::C
                         done = 1;
                     }
                 }
-                
+
                 struct cygnus_epoll_event ev;
-                ev.events = CYGNUS_EPOLLIN | CYGNUS_EPOLLOUT;
+                ev.events = CETUS_EPOLLIN | CETUS_EPOLLOUT;
                 ev.data.ptr = info;
-
-                cygnus_epoll_ctl(info->epfd, CYGNUS_EPOLL_CTL_MOD, info->sockfd, &ev);
-
-            } else if ((events[i].events & CYGNUS_EPOLLOUT)) {
+                if ((cygnus_epoll_ctl(info->epfd, CETUS_EPOLL_CTL_MOD, info->sockfd, &ev)) == -1) {
+                    fprintf(stdout, "cygnus_epoll_ctl: wait modify error");
+                    exit(EXIT_FAILURE);
+                }
+            } else if ((events[i].events & CETUS_EPOLLOUT)) {
                 if (info->oremain == 0) {
                     info->oremain = client.SendRequest(info->obuf);
                     info->ooff = 0;
                     // printf(" [%s:%d] new request: %d, %.*s", __func__, __LINE__, info->oremain, info->oremain, info->obuf);
                 }
-
+            
                 int len = cygnus_write(info->sockfd, info->obuf + info->ooff, info->oremain);
-                // printf(" [%s:%d] send len: %d\n", __func__, __LINE__, len);
-
+                
                 if(len > 0) {
                     info->ooff += len;
                     info->oremain -= len;
                     if (info->oremain == 0) {
                         struct cygnus_epoll_event ev;
-                        ev.events = CYGNUS_EPOLLIN;
+                        ev.events = CETUS_EPOLLIN;
                         ev.data.ptr = info;
-
-                        cygnus_epoll_ctl(info->epfd, CYGNUS_EPOLL_CTL_MOD, info->sockfd, &ev);
+                        if (ret = (cygnus_epoll_ctl(info->epfd, CETUS_EPOLL_CTL_MOD, info->sockfd, &ev)) == -1) {
+                            fprintf(stdout, "cygnus_epoll_ctl: wait modify error");
+                            exit(EXIT_FAILURE);
+                        }
                     }
                 }
-            } else {
-                printf(" >> unknown event!\n");
             }
-
         }
     }
 
-    fprintf(stdout, " # Transaction: %llu\n", oks);
-
     duration = timer.End();
+
+    fprintf(stdout, " [core %d] # Transaction: %llu\n", lcore_id, oks);
+
     return duration;
 }
 
@@ -274,8 +295,7 @@ void * DelegateClient(void * arg) {
     struct cygnus_param * param = (struct cygnus_param *)arg;
 
     utils::Properties props;
-    string file_name = ParseCommandLine(param->argc, param->argv, props);
-    cout << " Test workload: " << file_name << endl;
+    string file_name = ParseCommandLine(param->argc, (const char **)param->argv, props);
 
     ycsbc::CoreWorkload wl;
     wl.Init(props);
@@ -284,26 +304,34 @@ void * DelegateClient(void * arg) {
 
     int record_total_ops = stoi(props[ycsbc::CoreWorkload::RECORD_COUNT_PROPERTY]);
     int operation_total_ops = stoi(props[ycsbc::CoreWorkload::OPERATION_COUNT_PROPERTY]);
-    fprintf(stdout, " [core %d] # Total records (K) :\t %.2f \n", lcore_id, (double)record_total_ops / 1000.0);  
-    fprintf(stdout, " [core %d] # Total transactions (K) :\t %.2f\n", lcore_id, (double)operation_total_ops / 1000.0);  
-
-    // double duration = DelegateClient(db, &wl, record_total_ops, operation_total_ops, num_flows);
 
     ycsbc::Client client(wl);
 
-    /* Initialize connection info array */
-    info = (struct conn_info *)calloc(MAX_CONNECT, sizeof(struct conn_info));
+    int oks = 0;
 
     int epfd;
     struct cygnus_epoll_event * events;
+    int nevents;
 
     /* Create epoll fd */
     epfd = cygnus_epoll_create(0);
 
     /* Initialize epoll event array */
-    events = (struct cygnus_epoll_event *)calloc(MAX_EVENTS, sizeof(struct cygnus_epoll_event));
+    events = (struct cygnus_epoll_event *)malloc(NR_CETUS_EPOLL_EVENTS * CETUS_EPOLL_EVENT_SIZE);
 
-    int port = stoi(props.GetProperty("port", "6379"));
+    int done = 0;
+
+    /* Initialize connection number */
+    num_conn = 0;
+
+    /* Initialize connection info array */
+    info = (struct conn_info *)malloc(MAX_CONNECT * sizeof(struct conn_info));
+
+    /* Actual ops number */
+    int actual_record_ops, actual_operation_ops;
+    actual_record_ops = actual_operation_ops = 0;
+
+    int port = stoi(props.GetProperty("port", "80"));
 
     double load_duration = 0.0;
     load_duration = LoadRecord(epfd, events, client, record_total_ops, operation_total_ops, port, num_flows);
@@ -313,16 +341,18 @@ void * DelegateClient(void * arg) {
     double transaction_duration = 0.0;
     transaction_duration = PerformTransaction(epfd, events, client);
 
+    // for (int i = 0; i < num_ops; ++i) {
+    //   oks += client.DoTransaction();
+    // }
+
+    cygnus_sleep(5);
+
     char output[256];
 
     char output_file_name[32];
 	sprintf(output_file_name, "throughput_core_%d.txt", lcore_id);
-
 	FILE * output_file = fopen(output_file_name, "a+");
-    if (!output_file) {
-        perror("Failed to open output file");
-    }
-    
+
     sprintf(output, " [core %d] # Transaction throughput : %.2f (KTPS) \t %s \t %d\n", \
                     lcore_id, operation_total_ops / transaction_duration / 1000, \
                     file_name.c_str(), num_flows);
@@ -333,7 +363,7 @@ void * DelegateClient(void * arg) {
     fprintf(output_file, "%s", output);
 	fclose(output_file);
 
-    return 0;
+    return NULL;
 }
 
 int client(void * arg) {
@@ -377,7 +407,7 @@ int main(int argc, char ** argv) {
     return 0;
 }
 
-string ParseCommandLine(int argc, char *argv[], utils::Properties &props) {
+string ParseCommandLine(int argc, const char ** argv, utils::Properties &props) {
     std::cout << __func__ << std::endl;
     int argindex = 1;
     string filename;
@@ -423,4 +453,3 @@ void UsageMessage(const char *command) {
 inline bool StrStartWith(const char *str, const char *pre) {
     return strncmp(str, pre, strlen(pre)) == 0;
 }
-
