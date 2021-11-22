@@ -125,8 +125,8 @@ double LoadRecord(int epfd, struct cygnus_epoll_event * events, ycsbc::Client &c
                     info->ioff += len;
                 }
 
-                if (strchr(info->ibuf,'\n')) {
-                    // printf(" [%s:%d] receive reply: %s", __func__, __LINE__, info->ibuf);
+                if (strchr(info->ibuf,'\r\n')) {
+                    printf(" [%s:%d] receive reply: %s", __func__, __LINE__, info->ibuf);
 
                     client.ReceiveReply(info->ibuf);
 
