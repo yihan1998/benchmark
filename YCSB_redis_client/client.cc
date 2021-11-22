@@ -61,12 +61,12 @@ int ConnectServer(int epfd, char * server_ip, uint16_t port, const int num_recor
     num_conn++;
 
     struct cygnus_epoll_event ev;
-    ev.events = CETUS_EPOLLIN | CETUS_EPOLLOUT;
+    ev.events = CYGNUS_EPOLLIN | CYGNUS_EPOLLOUT;
     ev.data.ptr = conn_info;
 
     int ret;
 
-    if ((ret = cygnus_epoll_ctl(epfd, CETUS_EPOLL_CTL_ADD, sock, &ev)) == -1) {
+    if ((ret = cygnus_epoll_ctl(epfd, CYGNUS_EPOLL_CTL_ADD, sock, &ev)) == -1) {
         std::cerr <<  " cygnus_epoll_ctl() failed! " << std::endl;
         exit(EXIT_FAILURE);
     }
@@ -103,16 +103,16 @@ double LoadRecord(int epfd, struct cygnus_epoll_event * events, ycsbc::Client &c
             }
         }
 
-        nevents = cygnus_epoll_wait(epfd, events, NR_CETUS_EPOLL_EVENTS, -1);
+        nevents = cygnus_epoll_wait(epfd, events, NR_CYGNUS_EPOLL_EVENTS, -1);
 
         for (int i = 0; i < nevents; i++) {
             struct conn_info * info = (struct conn_info *)(events[i].data.ptr);
             int ret;
-            if ((events[i].events & CETUS_EPOLLERR)) {
+            if ((events[i].events & CYGNUS_EPOLLERR)) {
                 client.HandleErrorEvent(info);
             }
             
-            if ((events[i].events & CETUS_EPOLLIN)) {
+            if ((events[i].events & CYGNUS_EPOLLIN)) {
                 int len = cygnus_read(info->sockfd, info->ibuf + info->ioff, 1024*16 - info->ioff); 
 
                 if (len > 0) {
@@ -136,14 +136,14 @@ double LoadRecord(int epfd, struct cygnus_epoll_event * events, ycsbc::Client &c
                     }
                     
                     struct cygnus_epoll_event ev;
-                    ev.events = CETUS_EPOLLIN | CETUS_EPOLLOUT;
+                    ev.events = CYGNUS_EPOLLIN | CYGNUS_EPOLLOUT;
                     ev.data.ptr = info;
-                    if ((cygnus_epoll_ctl(info->epfd, CETUS_EPOLL_CTL_MOD, info->sockfd, &ev)) == -1) {
+                    if ((cygnus_epoll_ctl(info->epfd, CYGNUS_EPOLL_CTL_MOD, info->sockfd, &ev)) == -1) {
                         fprintf(stdout, "cygnus_epoll_ctl: wait modify error");
                         exit(EXIT_FAILURE);
                     }
                 }
-            } else if ((events[i].events & CETUS_EPOLLOUT)) {
+            } else if ((events[i].events & CYGNUS_EPOLLOUT)) {
                 if (info->oremain == 0) {
                     info->oremain = client.InsertRecord(info->obuf);
                     info->ooff = 0;
@@ -157,9 +157,9 @@ double LoadRecord(int epfd, struct cygnus_epoll_event * events, ycsbc::Client &c
                     info->oremain -= len;
                     if (info->oremain == 0) {
                         struct cygnus_epoll_event ev;
-                        ev.events = CETUS_EPOLLIN;
+                        ev.events = CYGNUS_EPOLLIN;
                         ev.data.ptr = info;
-                        if (ret = (cygnus_epoll_ctl(info->epfd, CETUS_EPOLL_CTL_MOD, info->sockfd, &ev)) == -1) {
+                        if (ret = (cygnus_epoll_ctl(info->epfd, CYGNUS_EPOLL_CTL_MOD, info->sockfd, &ev)) == -1) {
                             fprintf(stdout, "cygnus_epoll_ctl: wait modify error");
                             exit(EXIT_FAILURE);
                         }
@@ -173,10 +173,10 @@ double LoadRecord(int epfd, struct cygnus_epoll_event * events, ycsbc::Client &c
 
     for (int i = 0; i < num_conn; i++) {
         struct cygnus_epoll_event ev;
-        ev.events = CETUS_EPOLLIN | CETUS_EPOLLOUT;
+        ev.events = CYGNUS_EPOLLIN | CYGNUS_EPOLLOUT;
         ev.data.ptr = &info[i];
 
-        cygnus_epoll_ctl(info[i].epfd, CETUS_EPOLL_CTL_MOD, info[i].sockfd, &ev);
+        cygnus_epoll_ctl(info[i].epfd, CYGNUS_EPOLL_CTL_MOD, info[i].sockfd, &ev);
     }
     
     return duration;
@@ -203,16 +203,16 @@ double PerformTransaction(int epfd, struct cygnus_epoll_event * events, ycsbc::C
     int sec_recv = 0;
 
     while(!done) {
-        nevents = cygnus_epoll_wait(epfd, events, NR_CETUS_EPOLL_EVENTS, -1);
+        nevents = cygnus_epoll_wait(epfd, events, NR_CYGNUS_EPOLL_EVENTS, -1);
 
         for (int i = 0; i < nevents; i++) {
             struct conn_info * info = (struct conn_info *)(events[i].data.ptr);
             int ret;
-            if ((events[i].events & CETUS_EPOLLERR)) {
+            if ((events[i].events & CYGNUS_EPOLLERR)) {
                 client.HandleErrorEvent(info);
             }
             
-            if ((events[i].events & CETUS_EPOLLIN)) {
+            if ((events[i].events & CYGNUS_EPOLLIN)) {
                 int len = read(info->sockfd, info->ibuf + info->ioff, 1024*16 - info->ioff);
                 // printf(" [%s:%d] receive len: %d, ioff: %d\n", __func__, __LINE__, len, info->ioff);
 
@@ -252,13 +252,13 @@ double PerformTransaction(int epfd, struct cygnus_epoll_event * events, ycsbc::C
                 }
 
                 struct cygnus_epoll_event ev;
-                ev.events = CETUS_EPOLLIN | CETUS_EPOLLOUT;
+                ev.events = CYGNUS_EPOLLIN | CYGNUS_EPOLLOUT;
                 ev.data.ptr = info;
-                if ((cygnus_epoll_ctl(info->epfd, CETUS_EPOLL_CTL_MOD, info->sockfd, &ev)) == -1) {
+                if ((cygnus_epoll_ctl(info->epfd, CYGNUS_EPOLL_CTL_MOD, info->sockfd, &ev)) == -1) {
                     fprintf(stdout, "cygnus_epoll_ctl: wait modify error");
                     exit(EXIT_FAILURE);
                 }
-            } else if ((events[i].events & CETUS_EPOLLOUT)) {
+            } else if ((events[i].events & CYGNUS_EPOLLOUT)) {
                 if (info->oremain == 0) {
                     info->oremain = client.SendRequest(info->obuf);
                     info->ooff = 0;
@@ -272,9 +272,9 @@ double PerformTransaction(int epfd, struct cygnus_epoll_event * events, ycsbc::C
                     info->oremain -= len;
                     if (info->oremain == 0) {
                         struct cygnus_epoll_event ev;
-                        ev.events = CETUS_EPOLLIN;
+                        ev.events = CYGNUS_EPOLLIN;
                         ev.data.ptr = info;
-                        if (ret = (cygnus_epoll_ctl(info->epfd, CETUS_EPOLL_CTL_MOD, info->sockfd, &ev)) == -1) {
+                        if (ret = (cygnus_epoll_ctl(info->epfd, CYGNUS_EPOLL_CTL_MOD, info->sockfd, &ev)) == -1) {
                             fprintf(stdout, "cygnus_epoll_ctl: wait modify error");
                             exit(EXIT_FAILURE);
                         }
@@ -317,7 +317,7 @@ void * DelegateClient(void * arg) {
     epfd = cygnus_epoll_create(0);
 
     /* Initialize epoll event array */
-    events = (struct cygnus_epoll_event *)malloc(NR_CETUS_EPOLL_EVENTS * CETUS_EPOLL_EVENT_SIZE);
+    events = (struct cygnus_epoll_event *)malloc(NR_CYGNUS_EPOLL_EVENTS * CYGNUS_EPOLL_EVENT_SIZE);
 
     int done = 0;
 
