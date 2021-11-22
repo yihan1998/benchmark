@@ -303,7 +303,7 @@ void * DelegateClient(void * arg) {
     /* Initialize epoll event array */
     events = (struct cygnus_epoll_event *)calloc(MAX_EVENTS, sizeof(struct cygnus_epoll_event));
 
-    int port = stoi(props.GetProperty("port", "6379"));
+    int port = stoi(props.GetProperty("server_port", "6379"));
 
     double load_duration = 0.0;
     load_duration = LoadRecord(epfd, events, client, record_total_ops, operation_total_ops, port, num_flows);
@@ -385,7 +385,7 @@ enum cfg_params {
 };
 
 const struct option options[] = {
-    {   .name = "port", 
+    {   .name = "server_port", 
         .has_arg = required_argument,
         .flag = NULL, 
         .val = PORT},
@@ -416,8 +416,8 @@ string ParseCommandLine(int argc, char *argv[], utils::Properties &props) {
         switch (ret) {
             case PORT:
                 strarg.assign(optarg);
-                props.SetProperty("port", strarg);
-                cout << " Port: " << props["port"] << endl;
+                props.SetProperty("server_port", strarg);
+                cout << " Port: " << props["server_port"] << endl;
                 cout.flush();
                 break;
             
@@ -454,7 +454,7 @@ string ParseCommandLine(int argc, char *argv[], utils::Properties &props) {
     }
 
     fprintf(stdout, " [core %s] port: %s, flows: %s, workload: %s\n", \
-                    props["core_id"].c_str(), props["port"].c_str(), props["flows"].c_str(), filename.c_str());
+                    props["core_id"].c_str(), props["server_port"].c_str(), props["flows"].c_str(), filename.c_str());
 
     return filename;
 }
