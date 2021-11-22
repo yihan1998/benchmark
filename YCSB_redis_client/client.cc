@@ -87,7 +87,7 @@ double LoadRecord(int epfd, struct cygnus_epoll_event * events, ycsbc::Client &c
             }
         }
 
-        nevents = epoll_wait(epfd, events, MAX_EVENTS, -1);
+        nevents = cygnus_epoll_wait(epfd, events, MAX_EVENTS, -1);
 
         for (int i = 0; i < nevents; i++) {
             struct conn_info * info = (struct conn_info *)(events[i].data.ptr);
