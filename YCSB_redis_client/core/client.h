@@ -128,7 +128,7 @@ inline int Client::InsertRecord(char * request) {
 
     request[len-1] = '\n';
 
-    // printf(" >> Insert record: %s", request);
+    printf(" >> Insert record: %s", request);
 
     return len;
 }
