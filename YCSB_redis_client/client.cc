@@ -303,7 +303,7 @@ void * DelegateClient(void * arg) {
     /* Initialize epoll event array */
     events = (struct cygnus_epoll_event *)calloc(MAX_EVENTS, sizeof(struct cygnus_epoll_event));
 
-    int port = stoi(props.GetProperty("server_port", "6379"));
+    int port = stoi(props.GetProperty("port", "6379"));
 
     double load_duration = 0.0;
     load_duration = LoadRecord(epfd, events, client, record_total_ops, operation_total_ops, port, num_flows);
@@ -377,84 +377,36 @@ int main(int argc, char ** argv) {
     return 0;
 }
 
-enum cfg_params {
-    PORT,
-    WORKLOAD,
-    FLOWS,
-    CORE_ID,
-};
-
-const struct option options[] = {
-    {   .name = "server_port", 
-        .has_arg = required_argument,
-        .flag = NULL, 
-        .val = PORT},
-    {   .name = "workload", 
-        .has_arg = required_argument,
-        .flag = NULL, 
-        .val = WORKLOAD},
-    {   .name = "flows", 
-        .has_arg = required_argument,
-        .flag = NULL, 
-        .val = FLOWS},
-    {   .name = "core_id", 
-        .has_arg = required_argument,
-        .flag = NULL, 
-        .val = CORE_ID},
-};
-
 string ParseCommandLine(int argc, char *argv[], utils::Properties &props) {
-    int ret, done = 0;
-    char * end;
-    optind = 1;
+    std::cout << __func__ << std::endl;
+    int argindex = 1;
     string filename;
     ifstream input;
-    string strarg;
+    
+    for (int i = 0; i < argc; i++) {
+        std::cout << argv[i] << std::endl;
 
-    while (!done) {
-        ret = getopt_long(argc, argv, "", options, NULL);
-        switch (ret) {
-            case PORT:
-                strarg.assign(optarg);
-                props.SetProperty("server_port", strarg);
-                cout << " Port: " << props["server_port"] << endl;
-                cout.flush();
-                break;
-            
-            case FLOWS:
-                strarg.assign(optarg);
-                props.SetProperty("flows", strarg);
-                cout << " Flows: " << props["flows"] << endl;
-                cout.flush();
-                break;
-
-            case CORE_ID:
-                strarg.assign(optarg);
-                props.SetProperty("core_id", strarg);
-                cout << " Core id: " << props["core_id"] << endl;
-                cout.flush();
-                break;
-
-            case WORKLOAD:
-                filename.assign(optarg);
-                input.open(filename);
-                try {
-                    props.Load(input);
-                } catch (const string &message) {
-                    cout << message << endl;
-                    exit(0);
-                }
-                input.close();
-                break;
-
-            case -1:
-                done = 1;
-                break;
+        char s[MAX_BUFF_LEN];
+        char junk;
+        
+         if (sscanf(argv[i], "--server_port=%s\n", s, &junk) == 1) {
+            props.SetProperty("port", s);
+            std::cout << " Port: " << props["port"].c_str() << std::endl;
+        } else if (sscanf(argv[i], "--workload=%s\n", s, &junk) == 1) {
+            filename.assign(s);
+            input.open(filename);
+            try {
+                props.Load(input);
+            } catch (const string &message) {
+                cout << message << endl;
+                exit(0);
+            }
+            input.close();
+        } else if (sscanf(argv[i], "--flows=%s\n", s, &junk) == 1) {
+            props.SetProperty("flows", s);
+            std::cout << " Flows: " << props["flows"] << std::endl;
         }
     }
-
-    fprintf(stdout, " [core %s] port: %s, flows: %s, workload: %s\n", \
-                    props["core_id"].c_str(), props["server_port"].c_str(), props["flows"].c_str(), filename.c_str());
 
     return filename;
 }
