@@ -4,7 +4,7 @@ SRC_DIR		:= /home/yihan/nus-sys/cygnus
 
 RUNTIME_DIR	= $(SRC_DIR)/Cygnus
 THREAD_DIR	= $(SRC_DIR)/mthread
-TARGET_DIR	= $(SRC_DIR)/test/YCSB-client
+TARGET_DIR	= $(SRC_DIR)/test/YCSB_redis_client
 
 HOADRD_DIR	= /home/yihan/Hoard/src
 
