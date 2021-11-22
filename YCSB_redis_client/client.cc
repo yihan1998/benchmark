@@ -52,6 +52,12 @@ int ConnectServer(int epfd, char * server_ip, uint16_t port, const int num_recor
     struct conn_info * conn_info = &info[num_conn];
     conn_info->sockfd = sock;
     conn_info->epfd = epfd;
+
+    conn_info->ibuf = (char *)calloc(16, 1024);
+    conn_info->ioff = 0;
+
+    conn_info->obuf = (char *)calloc(16, 1024);
+    conn_info->ooff = 0;
     
     conn_info->total_record_ops = num_record_ops;
     conn_info->total_operation_ops = num_operation_ops;
