@@ -60,12 +60,11 @@ all: $(TARGET)
 
 CXX_STANDARD	:= -std=gnu++11
 
-CORE_DIR	:= $(TARGET_DIR)/core
-DB_DIR		:= $(TARGET_DIR)/db
+# SUBDIRS		:= core db redis
+SUBDIRS		:= core db
 
-SUBDIRS		:= core db redis
-
-CXX_SRC		:= $(wildcard $(CORE_DIR)/*.cc) $(wildcard $(DB_DIR)/*.cc)
+# CXX_SRC		:= $(wildcard $(CORE_DIR)/*.cc) $(wildcard $(DB_DIR)/*.cc)
+CXX_SRC		:= $(wildcard *.cc $(foreach fd, $(SUBDIRS), $(fd)/*.c))
 
 OBJECTS 	:= $(CXX_SRC:.cc=.o)
 
