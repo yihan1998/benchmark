@@ -277,16 +277,6 @@ void * DelegateClient(void * arg) {
     string file_name = ParseCommandLine(param->argc, param->argv, props);
     cout << " Test workload: " << file_name << endl;
 
-    int core_id = atoi(props.GetProperty("core_id", "1").c_str());
-
-    cpu_set_t core_set;
-    CPU_ZERO(&core_set);
-    CPU_SET(core_id, &core_set);
-
-    if (pthread_setaffinity_np(pthread_self(), sizeof(core_set), &core_set) == -1){
-        printf("warning: could not set CPU affinity, continuing...\n");
-    }
-
     ycsbc::CoreWorkload wl;
     wl.Init(props);
 
