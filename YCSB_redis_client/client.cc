@@ -227,7 +227,7 @@ double PerformTransaction(int epfd, struct cygnus_epoll_event * events, ycsbc::C
                 }
 
                 int to_recv = 0;
-                char recv_buff[1024*16];
+                char recv_buff[1024];
                 // if (sscanf(info->ibuf, "$%d\r\n%s\r\n", &to_recv, recv_buff) == 2) {
                 if (sscanf(info->ibuf, "$%d\r\n", &to_recv) == 1) {
                     // printf(" [%s:%d] to receive len: %d\n", __func__, __LINE__, to_recv);
