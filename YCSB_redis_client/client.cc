@@ -15,7 +15,7 @@
 #include "core/timer.h"
 #include "core/client.h"
 #include "core/core_workload.h"
-#include "db/db_factory.h"
+// #include "db/db_factory.h"
 
 #include <stdio.h>
 #include <sys/socket.h>
