@@ -39,6 +39,526 @@ void UsageMessage(const char *command);
 bool StrStartWith(const char *str, const char *pre);
 string ParseCommandLine(int argc, const char *argv[], utils::Properties &props);
 
+/* Default set of functions to build the reply. Keep in mind that such a
+ * function returning NULL is interpreted as OOM. */
+static redisReplyObjectFunctions defaultFunctions = {
+    createStringObject,
+    createArrayObject,
+    createIntegerObject,
+    createNilObject,
+    freeReplyObject
+};
+
+/* Create a reply object */
+static redisReply *createReplyObject(int type) {
+    redisReply *r = calloc(1,sizeof(*r));
+
+    if (r == NULL)
+        return NULL;
+
+    r->type = type;
+    return r;
+}
+
+/* Free a reply object */
+void freeReplyObject(void *reply) {
+    redisReply *r = reply;
+    size_t j;
+
+    switch(r->type) {
+    case REDIS_REPLY_INTEGER:
+        break; /* Nothing to free */
+    case REDIS_REPLY_ARRAY:
+        if (r->element != NULL) {
+            for (j = 0; j < r->elements; j++)
+                if (r->element[j] != NULL)
+                    freeReplyObject(r->element[j]);
+            free(r->element);
+        }
+        break;
+    case REDIS_REPLY_ERROR:
+    case REDIS_REPLY_STATUS:
+    case REDIS_REPLY_STRING:
+        if (r->str != NULL)
+            free(r->str);
+        break;
+    }
+    free(r);
+}
+
+static void *createStringObject(const redisReadTask *task, char *str, size_t len) {
+    redisReply *r, *parent;
+    char *buf;
+
+    r = createReplyObject(task->type);
+    if (r == NULL)
+        return NULL;
+
+    buf = malloc(len+1);
+    if (buf == NULL) {
+        freeReplyObject(r);
+        return NULL;
+    }
+
+    assert(task->type == REDIS_REPLY_ERROR  ||
+           task->type == REDIS_REPLY_STATUS ||
+           task->type == REDIS_REPLY_STRING);
+
+    /* Copy string value */
+    memcpy(buf,str,len);
+    buf[len] = '\0';
+    r->str = buf;
+    r->len = len;
+
+    if (task->parent) {
+        parent = task->parent->obj;
+        assert(parent->type == REDIS_REPLY_ARRAY);
+        parent->element[task->idx] = r;
+    }
+    return r;
+}
+
+static void *createArrayObject(const redisReadTask *task, int elements) {
+    redisReply *r, *parent;
+
+    r = createReplyObject(REDIS_REPLY_ARRAY);
+    if (r == NULL)
+        return NULL;
+
+    if (elements > 0) {
+        r->element = calloc(elements,sizeof(redisReply*));
+        if (r->element == NULL) {
+            freeReplyObject(r);
+            return NULL;
+        }
+    }
+
+    r->elements = elements;
+
+    if (task->parent) {
+        parent = task->parent->obj;
+        assert(parent->type == REDIS_REPLY_ARRAY);
+        parent->element[task->idx] = r;
+    }
+    return r;
+}
+
+static void *createIntegerObject(const redisReadTask *task, long long value) {
+    redisReply *r, *parent;
+
+    r = createReplyObject(REDIS_REPLY_INTEGER);
+    if (r == NULL)
+        return NULL;
+
+    r->integer = value;
+
+    if (task->parent) {
+        parent = task->parent->obj;
+        assert(parent->type == REDIS_REPLY_ARRAY);
+        parent->element[task->idx] = r;
+    }
+    return r;
+}
+
+static void *createNilObject(const redisReadTask *task) {
+    redisReply *r, *parent;
+
+    r = createReplyObject(REDIS_REPLY_NIL);
+    if (r == NULL)
+        return NULL;
+
+    if (task->parent) {
+        parent = task->parent->obj;
+        assert(parent->type == REDIS_REPLY_ARRAY);
+        parent->element[task->idx] = r;
+    }
+    return r;
+}
+
+/* This is the reply object returned by redisCommand() */
+typedef struct redisReply {
+    int type; /* REDIS_REPLY_* */
+    long long integer; /* The integer when type is REDIS_REPLY_INTEGER */
+    int len; /* Length of string */
+    char *str; /* Used for both REDIS_REPLY_ERROR and REDIS_REPLY_STRING */
+    size_t elements; /* number of elements, for REDIS_REPLY_ARRAY */
+    struct redisReply **element; /* elements vector for REDIS_REPLY_ARRAY */
+} redisReply;
+
+/* State for the protocol parser */
+typedef struct redisReader {
+    int err; /* Error flags, 0 when there is no error */
+    char errstr[128]; /* String representation of error when applicable */
+
+    char *buf; /* Read buffer */
+    size_t pos; /* Buffer cursor */
+    size_t len; /* Buffer length */
+    size_t maxbuf; /* Max length of unused buffer */
+
+    redisReadTask rstack[9];
+    int ridx; /* Index of current read task */
+    void *reply; /* Temporary reply pointer */
+
+    redisReplyObjectFunctions *fn;
+    void *privdata;
+} redisReader;
+
+redisReader * redisReaderCreate(char * buff, int len) {
+    redisReader * r = (redisReader *)calloc(1, sizeof(redisReader));
+    if (r == NULL) {
+        return NULL;
+    }
+
+    r->err = 0;
+    r->errstr[0] = '\0';
+    r->fn = &defaultFunctions;
+    r->buf = sdsempty();
+    r->pos = 0;
+    r->len = len;
+    r->maxbuf = REDIS_READER_MAX_BUF;
+    r->ridx = -1;
+
+    return r;
+}
+
+static char *readBytes(redisReader *r, unsigned int bytes) {
+    char *p;
+    if (r->len-r->pos >= bytes) {
+        p = r->buf+r->pos;
+        r->pos += bytes;
+        return p;
+    }
+    return NULL;
+}
+
+
+/* Find pointer to \r\n. */
+static char *seekNewline(char *s, size_t len) {
+    int pos = 0;
+    int _len = len-1;
+
+    /* Position should be < len-1 because the character at "pos" should be
+     * followed by a \n. Note that strchr cannot be used because it doesn't
+     * allow to search a limited length and the buffer that is being searched
+     * might not have a trailing NULL character. */
+    while (pos < _len) {
+        while(pos < _len && s[pos] != '\r') pos++;
+        if (s[pos] != '\r') {
+            /* Not found. */
+            return NULL;
+        } else {
+            if (s[pos+1] == '\n') {
+                /* Found. */
+                return s+pos;
+            } else {
+                /* Continue searching. */
+                pos++;
+            }
+        }
+    }
+    return NULL;
+}
+
+/* Read a long long value starting at *s, under the assumption that it will be
+ * terminated by \r\n. Ambiguously returns -1 for unexpected input. */
+static long long readLongLong(char *s) {
+    long long v = 0;
+    int dec, mult = 1;
+    char c;
+
+    if (*s == '-') {
+        mult = -1;
+        s++;
+    } else if (*s == '+') {
+        mult = 1;
+        s++;
+    }
+
+    while ((c = *(s++)) != '\r') {
+        dec = c - '0';
+        if (dec >= 0 && dec < 10) {
+            v *= 10;
+            v += dec;
+        } else {
+            /* Should not happen... */
+            return -1;
+        }
+    }
+
+    return mult*v;
+}
+
+static char *readLine(redisReader *r, int *_len) {
+    char *p, *s;
+    int len;
+
+    p = r->buf+r->pos;
+    s = seekNewline(p,(r->len-r->pos));
+    if (s != NULL) {
+        len = s-(r->buf+r->pos);
+        r->pos += len+2; /* skip \r\n */
+        if (_len) *_len = len;
+        return p;
+    }
+    return NULL;
+}
+
+static void moveToNextTask(redisReader * r) {
+    redisReadTask * cur, * prv;
+    while (r->ridx >= 0) {
+        /* Return a.s.a.p. when the stack is now empty. */
+        if (r->ridx == 0) {
+            r->ridx--;
+            return;
+        }
+
+        cur = &(r->rstack[r->ridx]);
+        prv = &(r->rstack[r->ridx-1]);
+        assert(prv->type == REDIS_REPLY_ARRAY);
+        if (cur->idx == prv->elements-1) {
+            r->ridx--;
+        } else {
+            /* Reset the type because the next item can be anything */
+            assert(cur->idx < prv->elements);
+            cur->type = -1;
+            cur->elements = -1;
+            cur->idx++;
+            return;
+        }
+    }
+}
+
+static int processLineItem(redisReader *r) {
+    redisReadTask *cur = &(r->rstack[r->ridx]);
+    void *obj;
+    char *p;
+    int len;
+
+    if ((p = readLine(r,&len)) != NULL) {
+        if (cur->type == REDIS_REPLY_INTEGER) {
+            if (r->fn && r->fn->createInteger)
+                obj = r->fn->createInteger(cur,readLongLong(p));
+            else
+                obj = (void*)REDIS_REPLY_INTEGER;
+        } else {
+            /* Type will be error or status. */
+            if (r->fn && r->fn->createString)
+                obj = r->fn->createString(cur,p,len);
+            else
+                obj = (void*)(size_t)(cur->type);
+        }
+
+        if (obj == NULL) {
+            __redisReaderSetErrorOOM(r);
+            return REDIS_ERR;
+        }
+
+        /* Set reply if this is the root object. */
+        if (r->ridx == 0) r->reply = obj;
+        moveToNextTask(r);
+        return REDIS_OK;
+    }
+
+    return REDIS_ERR;
+}
+
+static int processBulkItem(redisReader *r) {
+    redisReadTask *cur = &(r->rstack[r->ridx]);
+    void *obj = NULL;
+    char *p, *s;
+    long len;
+    unsigned long bytelen;
+    int success = 0;
+
+    p = r->buf+r->pos;
+    s = seekNewline(p,r->len-r->pos);
+    if (s != NULL) {
+        p = r->buf+r->pos;
+        bytelen = s-(r->buf+r->pos)+2; /* include \r\n */
+        len = readLongLong(p);
+
+        if (len < 0) {
+            /* The nil object can always be created. */
+            if (r->fn && r->fn->createNil)
+                obj = r->fn->createNil(cur);
+            else
+                obj = (void*)REDIS_REPLY_NIL;
+            success = 1;
+        } else {
+            /* Only continue when the buffer contains the entire bulk item. */
+            bytelen += len+2; /* include \r\n */
+            if (r->pos+bytelen <= r->len) {
+                if (r->fn && r->fn->createString)
+                    obj = r->fn->createString(cur,s+2,len);
+                else
+                    obj = (void*)REDIS_REPLY_STRING;
+                success = 1;
+            }
+        }
+
+        /* Proceed when obj was created. */
+        if (success) {
+            if (obj == NULL) {
+                __redisReaderSetErrorOOM(r);
+                return REDIS_ERR;
+            }
+
+            r->pos += bytelen;
+
+            /* Set reply if this is the root object. */
+            if (r->ridx == 0) r->reply = obj;
+            moveToNextTask(r);
+            return REDIS_OK;
+        }
+    }
+
+    return REDIS_ERR;
+}
+
+static int processMultiBulkItem(redisReader *r) {
+    redisReadTask *cur = &(r->rstack[r->ridx]);
+    void *obj;
+    char *p;
+    long elements;
+    int root = 0;
+
+    /* Set error for nested multi bulks with depth > 7 */
+    if (r->ridx == 8) {
+        __redisReaderSetError(r,REDIS_ERR_PROTOCOL,
+            "No support for nested multi bulk replies with depth > 7");
+        return REDIS_ERR;
+    }
+
+    if ((p = readLine(r,NULL)) != NULL) {
+        elements = readLongLong(p);
+        root = (r->ridx == 0);
+
+        if (elements == -1) {
+            if (r->fn && r->fn->createNil)
+                obj = r->fn->createNil(cur);
+            else
+                obj = (void*)REDIS_REPLY_NIL;
+
+            if (obj == NULL) {
+                __redisReaderSetErrorOOM(r);
+                return REDIS_ERR;
+            }
+
+            moveToNextTask(r);
+        } else {
+            if (r->fn && r->fn->createArray)
+                obj = r->fn->createArray(cur,elements);
+            else
+                obj = (void*)REDIS_REPLY_ARRAY;
+
+            if (obj == NULL) {
+                __redisReaderSetErrorOOM(r);
+                return REDIS_ERR;
+            }
+
+            /* Modify task stack when there are more than 0 elements. */
+            if (elements > 0) {
+                cur->elements = elements;
+                cur->obj = obj;
+                r->ridx++;
+                r->rstack[r->ridx].type = -1;
+                r->rstack[r->ridx].elements = -1;
+                r->rstack[r->ridx].idx = 0;
+                r->rstack[r->ridx].obj = NULL;
+                r->rstack[r->ridx].parent = cur;
+                r->rstack[r->ridx].privdata = r->privdata;
+            } else {
+                moveToNextTask(r);
+            }
+        }
+
+        /* Set reply if this is the root object. */
+        if (root) r->reply = obj;
+        return REDIS_OK;
+    }
+
+    return REDIS_ERR;
+}
+
+static int processItem(char * buff, int len, redisReader * r) {
+    redisReadTask *cur = &(r->rstack[r->ridx]);
+    char *p;
+
+    /* check if we need to read type */
+    if (cur->type < 0) {
+        if ((p = readBytes(r,1)) != NULL) {
+            switch (p[0]) {
+            case '-':
+                cur->type = REDIS_REPLY_ERROR;
+                break;
+            case '+':
+                cur->type = REDIS_REPLY_STATUS;
+                break;
+            case ':':
+                cur->type = REDIS_REPLY_INTEGER;
+                break;
+            case '$':
+                cur->type = REDIS_REPLY_STRING;
+                break;
+            case '*':
+                cur->type = REDIS_REPLY_ARRAY;
+                break;
+            default:
+                __redisReaderSetErrorProtocolByte(r,*p);
+                return REDIS_ERR;
+            }
+        } else {
+            /* could not consume 1 byte */
+            return REDIS_ERR;
+        }
+    }
+
+    /* process typed item */
+    switch(cur->type) {
+    case REDIS_REPLY_ERROR:
+    case REDIS_REPLY_STATUS:
+    case REDIS_REPLY_INTEGER:
+        return processLineItem(r);
+    case REDIS_REPLY_STRING:
+        return processBulkItem(r);
+    case REDIS_REPLY_ARRAY:
+        return processMultiBulkItem(r);
+    default:
+        assert(NULL);
+        return REDIS_ERR; /* Avoid warning. */
+    }
+}
+
+int getReply(char * buf, int len) {
+    redisReply * reply = NULL;
+
+    redisReader * reader = redisReaderCreate(buf, len);
+
+    if (reader->ridx == -1) {
+        /* Set first item to process when the stack is empty. */
+        reader->rstack[0].type = -1;
+        reader->rstack[0].elements = -1;
+        reader->rstack[0].idx = -1;
+        reader->rstack[0].obj = NULL;
+        reader->rstack[0].parent = NULL;
+        reader->rstack[0].privdata = NULL;
+        reader->ridx = 0;
+    }
+    
+    /* Process items in reply. */
+    while (reader->ridx >= 0) {
+        if (processItem(buf, len, reader) != REDIS_OK) {
+            break;
+        }
+    }
+
+    /* Return ASAP when an error occurred. */
+    if (r->err)
+        return REDIS_ERR;
+    
+    return REDIS_OK;
+}
+
 double LoadRecord(int epfd, struct epoll_event * events, ycsbc::Client &client, const int num_record_ops, const int num_operation_ops, const int port, const int num_flows) {
     int record_per_flow = num_record_ops / num_flows;
     int operation_per_flow = num_operation_ops / num_flows;
@@ -104,11 +624,7 @@ double LoadRecord(int epfd, struct epoll_event * events, ycsbc::Client &client, 
                     info->ioff += len;
                 }
 
-                if (strchr(info->ibuf,'\n')) {
-                    // printf(" [%s:%d] receive reply: %s", __func__, __LINE__, info->ibuf);
-
-                    client.ReceiveReply(info->ibuf);
-
+                if (getReply(info->ibuf, info->ioff)) {
                     info->ioff = 0;
 
                     /* Increase actual ops */
@@ -126,6 +642,29 @@ double LoadRecord(int epfd, struct epoll_event * events, ycsbc::Client &client, 
 
                     epoll_ctl(info->epfd, EPOLL_CTL_MOD, info->sockfd, &ev);
                 }
+
+                // if (strchr(info->ibuf,'\n')) {
+                //     // printf(" [%s:%d] receive reply: %s", __func__, __LINE__, info->ibuf);
+
+                //     client.ReceiveReply(info->ibuf);
+
+                //     info->ioff = 0;
+
+                //     /* Increase actual ops */
+                //     if(++info->actual_record_ops == info->total_record_ops) {
+                //         // cerr << " [ sock " << info->sockfd << "] # Loading records " << info->sockfd << " \t" << info->actual_record_ops << flush;
+                //         // fprintf(stdout, " [sock %d] # Loading records :\t %lld\n", info->sockfd, info->actual_record_ops);  
+                //         if (++num_load_complete == num_conn) {
+                //             done = 1;
+                //         }
+                //     }
+                    
+                //     struct epoll_event ev;
+                //     ev.events = EPOLLIN | EPOLLOUT;
+                //     ev.data.ptr = info;
+
+                //     epoll_ctl(info->epfd, EPOLL_CTL_MOD, info->sockfd, &ev);
+                // }
             } else if ((events[i].events & EPOLLOUT)) {
                 if (info->oremain == 0) {
                     info->oremain = client.InsertRecord(info->obuf);
