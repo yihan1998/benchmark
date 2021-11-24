@@ -5,7 +5,7 @@
 #include <future>
 #include "core/utils.h"
 #include "core/timer.h"
-#include "properties.h"
+#include "core/properties.h"
 
 #include <stdio.h>
 #include <sys/socket.h>
