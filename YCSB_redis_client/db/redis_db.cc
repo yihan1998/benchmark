@@ -47,7 +47,7 @@ int RedisDB::Scan(const std::string &table, const std::string &key, int record_c
       freeReplyObject(reply);
       return DB::kErrorNoData;
     }
-    // read += reply->element[1]->elements;
+    read += reply->element[1]->elements;
     printf("elements: %d\n",reply->element[1]->elements);
     for (int i = 0; i < reply->element[1]->elements; i++) {
       printf("key: %s\n", reply->element[1]->element[i]->str);
