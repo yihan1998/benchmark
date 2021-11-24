@@ -43,6 +43,8 @@ struct conn_info {
     long long   actual_ops;
 };
 
+__thread struct conn_info * info;
+
 using namespace std;
 
 int ParseCommandLine(int argc, const char *argv[]);
@@ -262,9 +264,19 @@ void * DelegateClient(void * arg) {
 
     int done = 0;
 
-    int nevents;
 
     int num_load_complete = 0;
+
+    int epfd;
+    struct epoll_event * events;
+
+    /* Create epoll fd */
+    epfd = epoll_create1(0);
+
+    /* Initialize epoll event array */
+    events = (struct epoll_event *)calloc(MAX_EVENTS, sizeof(struct epoll_event));
+
+    int nevents;
 
     // Peforms transactions
     utils::Timer<double> timer;
@@ -280,10 +292,8 @@ void * DelegateClient(void * arg) {
                 conn_info->sockfd = sock;
                 conn_info->epfd = epfd;
 
-                conn_info->total_record_ops = record_per_flow;
-                conn_info->total_operation_ops = operation_per_flow;
-
-                conn_info->actual_record_ops = conn_info->actual_operation_ops = 0;
+                conn_info->total_ops = stoi(props.GetProperty("count", "1"));
+                conn_info->actual_ops = 0;
 
                 num_conn++;
 
@@ -361,6 +371,9 @@ void * DelegateClient(void * arg) {
 int main(const int argc, const char *argv[]) {
     ParseCommandLine(argc, argv, props);
 
+    /* Initialize connection info array */
+    info = (struct conn_info *)calloc(MAX_CONNECT, sizeof(struct conn_info));
+
     if (rx) {
         func = DelegateServer;
     } else {
@@ -391,6 +404,7 @@ enum cfg_params {
     HOST,
     NUM_CORES,
     BUFF_SIZE,
+    PORT,
 };
 
 const struct option options[] = {
@@ -406,6 +420,10 @@ const struct option options[] = {
         .has_arg = required_argument,
         .flag = NULL, 
         .val = BUFF_SIZE},
+    {   .name = "p", 
+        .has_arg = required_argument,
+        .flag = NULL, 
+        .val = PORT},
     {0, 0, 0, 0}
 };
 
@@ -429,6 +447,10 @@ int ParseCommandLine(int argc, const char *argv[], utils::Properties &props) {
             case BUFF_SIZE:
                 strarg.assign(optarg);
                 buff_size = stoi(strarg);
+                break;
+            
+            case PORT:
+                props.SetProperty("port", optarg);
                 break;
 
             case -1:
