@@ -30,25 +30,28 @@ int RedisDB::Update(const std::string &table, const std::string &key, const std:
 
 int RedisDB::Scan(const std::string &table, const std::string &key, int record_count, std::vector<std::vector<KVPair>> &records) {
   cout << "scan for " << record_count << " records" << endl;
-  redisReply *reply = (redisReply *)redisCommand(redis_.context(), "SCAN %d COUNT %d", 0, record_count);
-  // redisReply *reply = (redisReply *)redisCommand(redis_.context(), "SCAN %d", 0);
-  if (!reply) return DB::kOK;
-  int index = atoi(reply->element[0]->str);
-  printf("index: %d\n",index);
-  if(reply->elements == 1){
-    printf("no data");
-    return DB::kErrorNoData;
-  }
-  if (reply->element[1]->type != REDIS_REPLY_ARRAY) {
-    printf("redis scan keys reply not array");
-    freeReplyObject(reply);
-    return DB::kErrorNoData;
-  }
-  printf("elements: %d\n",reply->element[1]->elements);
-  for (int i = 0; i < reply->element[1]->elements; i++) {
-    string key = reply->element[1]->element[i]->str;
-    printf("i: %d,key: %s\n",i,key);
-  }
+  int index;
+  do {
+    redisReply *reply = (redisReply *)redisCommand(redis_.context(), "SCAN %d COUNT %d", 0, record_count);
+    // redisReply *reply = (redisReply *)redisCommand(redis_.context(), "SCAN %d", 0);
+    if (!reply) return DB::kOK;
+    index = atoi(reply->element[0]->str);
+    printf("index: %d\n",index);
+    if(reply->elements == 1){
+      printf("no data");
+      return DB::kErrorNoData;
+    }
+    if (reply->element[1]->type != REDIS_REPLY_ARRAY) {
+      printf("redis scan keys reply not array");
+      freeReplyObject(reply);
+      return DB::kErrorNoData;
+    }
+    printf("elements: %d\n",reply->element[1]->elements);
+    for (int i = 0; i < reply->element[1]->elements; i++) {
+      string key = reply->element[1]->element[i]->str;
+      printf("i: %d,key: %s\n",i,key);
+    }
+  } while (index != 0);
 
   return DB::kOK;
 }
