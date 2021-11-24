@@ -105,47 +105,27 @@ double LoadRecord(int epfd, struct epoll_event * events, ycsbc::Client &client, 
                     info->ioff += len;
                 }
 
-                if (getReply(info->ibuf, info->ioff)) {
-                    info->ioff = 0;
-
-                    /* Increase actual ops */
-                    if(++info->actual_record_ops == info->total_record_ops) {
-                        // cerr << " [ sock " << info->sockfd << "] # Loading records " << info->sockfd << " \t" << info->actual_record_ops << flush;
-                        // fprintf(stdout, " [sock %d] # Loading records :\t %lld\n", info->sockfd, info->actual_record_ops);  
-                        if (++num_load_complete == num_conn) {
-                            done = 1;
-                        }
-                    }
-                    
-                    struct epoll_event ev;
-                    ev.events = EPOLLIN | EPOLLOUT;
-                    ev.data.ptr = info;
-
-                    epoll_ctl(info->epfd, EPOLL_CTL_MOD, info->sockfd, &ev);
+                struct reply * reply = getReply(info->ibuf, info->ioff);
+                if (!reply) {
+                    continue;
                 }
+                
+                info->ioff = 0;
 
-                // if (strchr(info->ibuf,'\n')) {
-                //     // printf(" [%s:%d] receive reply: %s", __func__, __LINE__, info->ibuf);
+                /* Increase actual ops */
+                if(++info->actual_record_ops == info->total_record_ops) {
+                    // cerr << " [ sock " << info->sockfd << "] # Loading records " << info->sockfd << " \t" << info->actual_record_ops << flush;
+                    // fprintf(stdout, " [sock %d] # Loading records :\t %lld\n", info->sockfd, info->actual_record_ops);  
+                    if (++num_load_complete == num_conn) {
+                        done = 1;
+                    }
+                }
+                
+                struct epoll_event ev;
+                ev.events = EPOLLIN | EPOLLOUT;
+                ev.data.ptr = info;
 
-                //     client.ReceiveReply(info->ibuf);
-
-                //     info->ioff = 0;
-
-                //     /* Increase actual ops */
-                //     if(++info->actual_record_ops == info->total_record_ops) {
-                //         // cerr << " [ sock " << info->sockfd << "] # Loading records " << info->sockfd << " \t" << info->actual_record_ops << flush;
-                //         // fprintf(stdout, " [sock %d] # Loading records :\t %lld\n", info->sockfd, info->actual_record_ops);  
-                //         if (++num_load_complete == num_conn) {
-                //             done = 1;
-                //         }
-                //     }
-                    
-                //     struct epoll_event ev;
-                //     ev.events = EPOLLIN | EPOLLOUT;
-                //     ev.data.ptr = info;
-
-                //     epoll_ctl(info->epfd, EPOLL_CTL_MOD, info->sockfd, &ev);
-                // }
+                epoll_ctl(info->epfd, EPOLL_CTL_MOD, info->sockfd, &ev);
             } else if ((events[i].events & EPOLLOUT)) {
                 if (info->oremain == 0) {
                     info->oremain = client.InsertRecord(info->obuf);
@@ -220,7 +200,7 @@ double PerformTransaction(int epfd, struct epoll_event * events, ycsbc::Client &
                     info->ioff += len;
                 }
 
-                struct reply * reply = getReply();
+                struct reply * reply = getReply(info->ibuf, info->ioff);
                 if (!reply) {
                     continue;
                 }
