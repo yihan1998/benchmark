@@ -124,6 +124,9 @@ int parseReply(struct reader * r, struct reply * reply) {
             if ((s = readLine(r,&len)) != NULL) {
                 reply->len = readLongLong(s);
                 fprintf(stdout, " \t string len: %d\n", reply->len);
+                if (reply->len == -1) {
+                    return 0;
+                }
                 int read_len;
                 if ((reply->str = readLine(r, &read_len)) != NULL) {
                     fprintf(stdout, " \t string: %s\n", reply->str);

@@ -152,6 +152,11 @@ int parseReply(struct reader * r, struct reply * reply) {
             if ((s = readLine(r,&len)) != NULL) {
                 reply->len = readLongLong(s);
                 fprintf(stdout, " \t string len: %d\n", reply->len);
+
+                if (reply->len == -1) {
+                    return 0;
+                }
+
                 int read_len;
                 if ((reply->str = readLine(r, &read_len)) != NULL) {
                     fprintf(stdout, " \t string: %s\n", reply->str);
@@ -226,12 +231,14 @@ int main(int argc, char ** argv) {
     // assert(reply->type == REDIS_REPLY_INTEGER);
     // assert(reply->integer == 12);
 
-    // printf(" ***** Test 4 : STRING reply *****\n");
-    // char test4[] = "$2\r\n41\r\n";
-    // reply = getReply(test4, strlen(test4));
-    // assert(reply->type == REDIS_REPLY_STRING);
-    // assert(reply->len == 2);
-    // printf(" \t receive string: %s\n", reply->str);
+    printf(" ***** Test 4 : STRING reply *****\n");
+    char test4[] = "$-1\r\n";
+    reply = getReply(test4, strlen(test4));
+    if (reply) {
+        printf(" \t Succeed! :)\n");
+    } else {
+        printf(" \t Failed! :(\n");
+    }
 
     // printf(" ***** Test 5 : ARRAY reply *****\n");
     // char test5[] = "*2\r\n$6\r\nmylist\r\n$8\r\nabcdefgh\r\n";
@@ -247,14 +254,14 @@ int main(int argc, char ** argv) {
     // printf(" \t receive string len: %d\n", reply->element[1]->len);
     // printf(" \t receive string: %s\n", reply->element[1]->str);
 
-    printf(" ***** Test 5 : ARRAY reply (not fully received) *****\n");
-    char test5[] = "*6\r\n$6\r\nmylist\r\n$8\r\nabcdefgh\r\n";
-    reply = getReply(test5, strlen(test5));
-    if (reply) {
-        printf(" \t Succeed! :)\n");
-    } else {
-        printf(" \t Failed! :(\n");
-    }
+    // printf(" ***** Test 5 : ARRAY reply (not fully received) *****\n");
+    // char test5[] = "*6\r\n$6\r\nmylist\r\n$8\r\nabcdefgh\r\n";
+    // reply = getReply(test5, strlen(test5));
+    // if (reply) {
+    //     printf(" \t Succeed! :)\n");
+    // } else {
+    //     printf(" \t Failed! :(\n");
+    // }
 
     // printf(" ***** Test 5 : ARRAY reply (recusive) *****\n");
     // char test5[] = "*2\r\n$2\r\n41\r\n*5\r\n$6\r\nabcdef\r\n$6\r\nghijkq\r\n$6\r\nmnopqr\r\n$6\r\n012345\r\n$6\r\n678910\r\n";
