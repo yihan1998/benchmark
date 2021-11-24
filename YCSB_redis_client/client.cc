@@ -194,7 +194,7 @@ double PerformTransaction(int epfd, struct epoll_event * events, ycsbc::Client &
             if ((events[i].events & EPOLLIN)) {
                 int len = read(info->sockfd, info->ibuf + info->ioff, 1024*16 - info->ioff);
                 printf(" [%s:%d] receive len: %d, ioff: %d\n", __func__, __LINE__, len, info->ioff);
-                printf(" \t received: %*.s\n", __func__, __LINE__, len, info->ibuf + info->ioff);
+                printf(" \t received: %*.s\n", len, info->ibuf + info->ioff);
 
                 if (len > 0) {
                     info->ioff += len;
