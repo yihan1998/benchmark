@@ -18,6 +18,7 @@
 
 #include <sys/epoll.h>
 #include <sys/timerfd.h>
+#include <sys/time.h>
 
 #define TIMEVAL_TO_USEC(t)  ((t.tv_sec * 1000000) + (t.tv_usec))
 
@@ -77,6 +78,8 @@ void * DelegateServer(void * arg) {
         printf("warning: could not set CPU affinity, continuing...\n");
     }
 
+    int oks = 0;
+
     int epfd;
     struct epoll_event * events;
     int nevents;
@@ -126,7 +129,11 @@ void * DelegateServer(void * arg) {
     ev.events = EPOLLIN;
     ev.data.fd = sock;
 
-    epoll_ctl(epfd, EPOLL_CTL_ADD, sock, &ev);
+    int ret;
+    if ((ret = epoll_ctl(epfd, EPOLL_CTL_ADD, sock, &ev)) == -1) {
+        fprintf(stderr, " cetus_epoll_ctl() error on sock\n");
+        exit(EXIT_FAILURE);
+    }
 
     int wait_timerfd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK);
     if (wait_timerfd == -1) {
@@ -147,7 +154,7 @@ void * DelegateServer(void * arg) {
 
     ev.events = EPOLLIN;
     ev.data.fd = wait_timerfd;
-    if (ret = (epoll_ctl(epfd, EPOLL_CTL_ADD, wait_timerfd, &ev)) == -1) {
+    if ((ret = epoll_ctl(epfd, EPOLL_CTL_ADD, wait_timerfd, &ev)) == -1) {
         fprintf(stderr, " cetus_epoll_ctl() error on wait_timerfd sock\n");
         exit(EXIT_FAILURE);
     }
@@ -180,8 +187,9 @@ void * DelegateServer(void * arg) {
                     continue;
                 }
             } else if ((events[i].events & EPOLLERR)) {
-                // cout << " Closing sock " << events[i].events << endl;
-                server.HandleErrorEvent(events[i].data.fd);
+                shutdown(events[i].data.fd, SHUT_WR);
+                shutdown(events[i].data.fd, SHUT_RD);
+                close(events[i].data.fd);
                 if (++num_complete == num_accept) {
                     done = 1;
                 }
@@ -282,6 +290,8 @@ void * DelegateClient(void * arg) {
     // Peforms transactions
     utils::Timer<double> timer;
     timer.Start();
+
+    int num_flows = stoi(props.GetProperty("num_flows", "1"));
 
     while(!done) {
         while(num_conn < num_flows) {
@@ -406,6 +416,7 @@ enum cfg_params {
     NUM_CORES,
     BUFF_SIZE,
     PORT,
+    NUM_FLOWS,
 };
 
 const struct option options[] = {
@@ -425,6 +436,10 @@ const struct option options[] = {
         .has_arg = required_argument,
         .flag = NULL, 
         .val = PORT},
+    {   .name = "n", 
+        .has_arg = required_argument,
+        .flag = NULL, 
+        .val = NUM_FLOWS},
     {0, 0, 0, 0}
 };
 
@@ -452,6 +467,10 @@ int ParseCommandLine(int argc, const char *argv[], utils::Properties &props) {
             
             case PORT:
                 props.SetProperty("port", optarg);
+                break;
+
+            case NUM_FLOWS:
+                props.SetProperty("num_flows", optarg);
                 break;
 
             case -1:
