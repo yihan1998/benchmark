@@ -129,7 +129,6 @@ void * DelegateServer(void * arg) {
     ev.events = EPOLLIN;
     ev.data.fd = sock;
 
-    int ret;
     if ((ret = epoll_ctl(epfd, EPOLL_CTL_ADD, sock, &ev)) == -1) {
         fprintf(stderr, " cetus_epoll_ctl() error on sock\n");
         exit(EXIT_FAILURE);
