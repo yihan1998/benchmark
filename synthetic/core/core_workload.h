@@ -26,7 +26,7 @@ class CoreWorkload {
   ///
   virtual void Init(const utils::Properties &p);
   
-  virtual int NextServiceTime(void);
+  virtual uint64_t NextServiceTime(void);
 
   CoreWorkload() :
       service_time_chooser_(NULL), count_(0) {
