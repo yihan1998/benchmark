@@ -5,7 +5,6 @@
 #include <future>
 #include "core/utils.h"
 #include "core/timer.h"
-#include "db/db_factory.h"
 
 #include <stdio.h>
 #include <sys/socket.h>
