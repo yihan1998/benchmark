@@ -23,7 +23,7 @@ int RedisDB::Update(const std::string &table, const std::string &key, const std:
   redisReply *reply = (redisReply *)redisCommand(redis_.context(), "SET %s %s", key.c_str(), value.c_str());
   if (!reply) return DB::kOK;
   cout << reply->str << endl;
-  assert(strcmp(reply->str,"ok") == 0);
+  assert(strcmp(reply->str,"OK") == 0);
 
   return DB::kOK;;
 }
