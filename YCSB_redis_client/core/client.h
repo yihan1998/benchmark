@@ -83,11 +83,13 @@ class Client {
         
         virtual ~Client() { }
     
+        size_t lastScanLen_;
+
     protected:
     
         virtual int ReadRequest(char * request);
         virtual int ReadModifyWriteRequest(char * request);
-        virtual int ScanRequest(KVRequest &request);
+        virtual int ScanRequest(char * request);
         virtual int UpdateRequest(char * request);
         virtual int InsertRequest(char * request);
 
@@ -134,9 +136,10 @@ inline int Client::SendRequest(char * obuf) {
         case INSERT:
             len = InsertRequest(obuf);
             break;
-        // case SCAN:
-        //     status = ScanRequest(obuf);
-        //     break;
+        case SCAN:
+            lastScanLen_ = workload_.NextScanLength();
+            len = ScanRequest(obuf, 0, lastScanLen_);
+            break;
         case READMODIFYWRITE:
             len = ReadModifyWriteRequest(obuf);
             break;
@@ -263,40 +266,26 @@ inline int Client::ReadModifyWriteRequest(char * request) {
     return len;
 }
 
-inline int Client::ScanRequest(KVRequest &request) {
-    const std::string &table = workload_.NextTable();
+inline int Client::ScanRequest(char * request, int cursor, int record_count) {
     const std::string &key = workload_.NextTransactionKey();
-    int len = workload_.NextScanLength();
-    std::string record_count = std::to_string(len);
 
-    request.op = SCAN;
+    std::string cmd("SCAN");
+    std::string count("COUNT")
+    size_t len = cmd.length() + 1 + cursor.length() + 1 + count.length() + 1 + record_count.length() + 1;
+    cmd.reserve(len);
 
-    strncpy(request.table, table.c_str(), TABLE_NAME_SIZE);
-    strncpy(request.request.first, key.c_str(), KEY_SIZE);
-    strncpy(request.request.second, record_count.c_str(), VALUE_SIZE);
+    cmd.append(" ").append(cursor);
+    cmd.append(" ").append(count);
+    cmd.append(" ").append(record_count);
 
-    // std::cout <<  " Scan table: " <<  table.c_str() << ", key: " << key.c_str() << ", record len: " << len << "\n" << std::endl;
-    
-    return DB::kOK;
+    strncpy(request, cmd.c_str(), len);
+
+    request[len-1] = '\n';
+
+    return len;
 }
 
 inline int Client::UpdateRequest(char * request) {
-    // const std::string &table = workload_.NextTable();
-    // const std::string &key = workload_.NextTransactionKey();
-
-    // std::string value;
-    // workload_.BuildUpdate(value);
-    
-    // request.op = UPDATE;
-
-    // strncpy(request.table, table.c_str(), TABLE_NAME_SIZE);
-    // strncpy(request.request.first, key.c_str(), KEY_SIZE);
-    // strncpy(request.request.second, value.c_str(), VALUE_SIZE);
-    
-    // std::cout <<  " Update table: " <<  table.c_str() << ", key: " << key.c_str() << ", value: " << value.c_str() << "\n" << std::endl;
-    
-    // return DB::kOK;
-
     const std::string &table = workload_.NextTable();
     std::string key = workload_.NextSequenceKey();
     std::string value;

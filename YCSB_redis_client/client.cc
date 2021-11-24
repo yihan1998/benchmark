@@ -200,6 +200,7 @@ double PerformTransaction(int epfd, struct epoll_event * events, ycsbc::Client &
                 }
 
                 int to_recv = 0;
+                int cursor = 0;
                 char recv_buff[1024*16];
                 // if (sscanf(info->ibuf, "$%d\r\n%s\r\n", &to_recv, recv_buff) == 2) {
                 if (sscanf(info->ibuf, "$%d\r\n", &to_recv) == 1) {
@@ -211,6 +212,12 @@ double PerformTransaction(int epfd, struct epoll_event * events, ycsbc::Client &
                                 continue;
                             }
                         }
+                    }
+                } else if (!strcmp(info->ibuf, "+OK\r\n")) {
+                    /* Receive Insert/Update reply */
+                } else if (sscanf(info->ibuf, "%d\r\n", &cursor) == 1) {
+                    if (cursor > 0) {
+                        fprintf(stdout, "%s", info->ibuf);
                     }
                 }
                 
