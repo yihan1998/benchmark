@@ -13,6 +13,8 @@
 #include <string.h>
 #include <getopt.h>
 
+#include <fcntl.h>
+
 #include <sys/epoll.h>
 #include <sys/timerfd.h>
 
@@ -27,6 +29,12 @@ int rx = 0;
 int buff_size = 1024;
 void * (*func)(void *); 
 
+__thread int num_accept = 0;
+__thread int num_finished = 0;
+__thread int num_conn = 0;
+
+utils::Properties props;
+
 struct conn_info {
     int     sockfd;
     int     epfd;
@@ -38,6 +46,22 @@ struct conn_info {
 using namespace std;
 
 int ParseCommandLine(int argc, const char *argv[]);
+
+int AcceptConnection(int sock) {
+    int c;
+    
+    struct sockaddr_in client_addr;
+    socklen_t len = sizeof(client_addr);
+
+    if ((c = accept(sock, (struct sockaddr *)&client_addr, &len)) < 0) {
+        printf("\n accept connection error \n");
+        return -1;
+    }
+
+    fcntl(c, F_SETFL, O_NONBLOCK);
+
+    return c;
+}
 
 void * DelegateServer(void * arg) {
     int core_id = *((int *)arg);
@@ -137,7 +161,7 @@ void * DelegateServer(void * arg) {
             if (events[i].data.fd == sock) {
                 /* Accept connection */
                 int c;
-                if ((c = server.AcceptConnection(sock)) > 0) {
+                if ((c = AcceptConnection(sock)) > 0) {
                     // std::cout <<  " accept connection through sock " << c << std::endl;
                     struct epoll_event ev;
                     ev.events = EPOLLIN;
@@ -199,6 +223,29 @@ void * DelegateServer(void * arg) {
     return NULL;
 }
 
+static int ConnectServer(const std::string &ip, int port) {
+    int sock = 0;
+    struct sockaddr_in server_addr;
+
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        printf("\n Socket creation error \n");
+        return -1;
+    }
+   
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(port);
+    server_addr.sin_addr.s_addr = inet_addr(ip.c_str());
+   
+    if (connect(sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
+        printf("\nConnection Failed \n");
+        return -1;
+    }
+
+    fcntl(sock, F_SETFL, O_NONBLOCK);
+
+    return sock;
+}
+
 void * DelegateClient(void * arg) {
     int core_id = *((int *)arg);
 
@@ -211,7 +258,7 @@ void * DelegateClient(void * arg) {
     }
 
     CoreWorkload wl;
-    wl.Init();
+    wl.Init(props);
 
     int done = 0;
 
@@ -227,7 +274,7 @@ void * DelegateClient(void * arg) {
         while(num_conn < num_flows) {
             /* Connect server */
             int sock;
-            if ((sock = client.ConnectServer("10.0.1.1", port)) > 0) {
+            if ((sock = ConnectServer("10.0.1.1", port)) > 0) {
                 // fprintf(stdout, " [%s] connect server through sock %d\n", __func__, sock);
                 struct conn_info * conn_info = &info[num_conn];
                 conn_info->sockfd = sock;
@@ -256,7 +303,7 @@ void * DelegateClient(void * arg) {
             struct conn_info * info = (struct conn_info *)(events[i].data.ptr);
             int ret;
             if ((events[i].events & EPOLLERR)) {
-                client.HandleErrorEvent(info);
+                continue;
             }
             
             if ((events[i].events & EPOLLIN)) {
@@ -312,7 +359,6 @@ void * DelegateClient(void * arg) {
 }
 
 int main(const int argc, const char *argv[]) {
-    utils::Properties props;
     ParseCommandLine(argc, argv, props);
 
     if (rx) {
