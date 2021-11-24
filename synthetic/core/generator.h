@@ -6,14 +6,11 @@
 //  Copyright (c) 2014 Jinglei Ren <jinglei@ren.systems>.
 //
 
-#ifndef YCSB_C_GENERATOR_H_
-#define YCSB_C_GENERATOR_H_
+#ifndef _GENERATOR_H_
+#define _GENERATOR_H_
 
 #include <cstdint>
 #include <string>
-
-namespace ycsbc {
-
 template <typename Value>
 class Generator {
  public:
@@ -21,7 +18,5 @@ class Generator {
   virtual Value Last() = 0;
   virtual ~Generator() { }
 };
-
-} // ycsbc
 
 #endif // YCSB_C_GENERATOR_H_

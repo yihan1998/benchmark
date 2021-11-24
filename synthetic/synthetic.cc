@@ -25,8 +25,7 @@
 #define MAX_EVENTS  8192
 
 int rx = 0;
-int num_cores = 1;
-int buff_size = 64;
+int buff_size = 1024;
 void * (*func)(void *); 
 
 struct conn_info {
@@ -326,6 +325,8 @@ int main(const int argc, const char *argv[]) {
     pthread_t tid[MAX_CPUS];
     int args[MAX_CPUS];
 
+    int num_cores = stoi(props.GetProperty("num_cores", "1"));
+
     for (int i = 0; i < num_cores; i++) {
         args[i] = i;
         if (pthread_create(&tid[i], NULL, DelegateServer, (void *)&args[i]) != 0) {
@@ -363,7 +364,7 @@ const struct option options[] = {
     {0, 0, 0, 0}
 };
 
-int ParseCommandLine(int argc, const char *argv[]) {
+int ParseCommandLine(int argc, const char *argv[], utils::Properties &props) {
     int ret, done = 0;
     char * end;
     optind = 1;
@@ -377,11 +378,12 @@ int ParseCommandLine(int argc, const char *argv[]) {
                 break;
             
             case NUM_CORES:
-                num_cores = atoi(optarg);
+                props.SetProperty("num_cores", optarg);
                 break;
 
             case BUFF_SIZE:
-                buff_size = atoi(optarg);
+                strarg.assign(optarg);
+                buff_size = stoi(strarg);
                 break;
 
             case -1:

@@ -9,15 +9,15 @@
 
 using std::string;
 
-const string CoreWorkload::REQUEST_DISTRIBUTION_PROPERTY ="requestdistribution";
-const string CoreWorkload::REQUEST_DISTRIBUTION_DEFAULT = "uniform";
+const string CoreWorkload::DISTRIBUTION_PROPERTY ="requestdistribution";
+const string CoreWorkload::DISTRIBUTION_DEFAULT = "uniform";
 
 const string CoreWorkload::COUNT_PROPERTY = "count";
 
 void CoreWorkload::Init(const utils::Properties &p) {   
     std::string distribution = p.GetProperty(DISTRIBUTION_PROPERTY, DISTRIBUTION_DEFAULT);
 
-    record_count_ = std::stoi(p.GetProperty(RECORD_COUNT_PROPERTY));
+    count_ = std::stoi(p.GetProperty(COUNT_PROPERTY));
     
     if (distribution == "constant") {
         service_time_chooser_ = new ConstGenerator(1);

@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <string>
+#include "properties.h"
 #include "generator.h"
 #include "discrete_generator.h"
 #include "counter_generator.h"
@@ -23,7 +24,7 @@ class CoreWorkload {
   /// Initialize the scenario.
   /// Called once, in the main client thread, before any operations are started.
   ///
-  virtual void Init(void);
+  virtual void Init(const utils::Properties &p);
   
   virtual int NextServiceTime(void);
 
