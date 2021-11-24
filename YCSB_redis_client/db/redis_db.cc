@@ -27,19 +27,19 @@ int RedisDB::Update(const std::string &table, const std::string &key, const std:
   return DB::kOK;;
 }
 
-int RedisDB::Scan(const std::string &table, const std::string &key, int record_count) {
+int RedisDB::Scan(const std::string &table, const std::string &key, int record_count, std::vector<std::vector<KVPair>> &records) {
   redisReply *reply = (redisReply *)redisCommand(redis_.context(), "SCAN %s COUNT %d", key.c_str(), record_count);
   if (!reply) return DB::kOK;
   int index = atoi(reply->element[0]->str);
   printf("index: %d",index);
   if(reply->elements == 1){
     printf("no data");
-    break;
+    return DB::kErrorNoData;
   }
   if (reply->element[1]->type != REDIS_REPLY_ARRAY) {
     printf("redis scan keys reply not array");
-    freeReplyObject(_reply);
-    break;
+    freeReplyObject(reply);
+    return DB::kErrorNoData;
   }
   for (int i = 0; i < reply->element[1]->elements; i++) {
     string key = reply->element[1]->element[i]->str;
