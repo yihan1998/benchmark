@@ -46,8 +46,7 @@ int main(int argc, const char *argv[]) {
   }
 
   result.clear();
-  std::vector<std::vector<KVPair>> records;
-  db.Scan(keys[0], keys[0], 5, records);
+  std::vector<std::vector<KV12, records);
 
   return 0;
 }

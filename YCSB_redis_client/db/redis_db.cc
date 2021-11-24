@@ -33,8 +33,8 @@ int RedisDB::Scan(const std::string &table, const std::string &key, int record_c
   int index;
   int read = 0;
   do {
-    // redisReply *reply = (redisReply *)redisCommand(redis_.context(), "SCAN %d COUNT %d", index, record_count - read);
-    redisReply *reply = (redisReply *)redisCommand(redis_.context(), "SCAN %d", index);
+    redisReply *reply = (redisReply *)redisCommand(redis_.context(), "SCAN %d COUNT %d", index, record_count - read);
+    // redisReply *reply = (redisReply *)redisCommand(redis_.context(), "SCAN %d", index);
     if (!reply) return DB::kOK;
     index = stoi(reply->element[0]->str);
     printf("index: %d\n",index);
@@ -52,7 +52,7 @@ int RedisDB::Scan(const std::string &table, const std::string &key, int record_c
     for (int i = 0; i < reply->element[1]->elements; i++) {
       printf("key: %s\n", reply->element[1]->element[i]->str);
     }
-  } while (index != 0);
+  } while (read < record_count);
 
   return DB::kOK;
 }
