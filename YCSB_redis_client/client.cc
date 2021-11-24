@@ -216,6 +216,7 @@ double PerformTransaction(int epfd, struct epoll_event * events, ycsbc::Client &
                 } else if (!strcmp(info->ibuf, "+OK\r\n")) {
                     /* Receive Insert/Update reply */
                 } else if (sscanf(info->ibuf, "%d\r\n", &cursor) == 1) {
+                    fprintf(stdout, "%s", info->ibuf);
                     if (cursor > 0) {
                         fprintf(stdout, "%s", info->ibuf);
                     }
