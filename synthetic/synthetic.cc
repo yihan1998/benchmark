@@ -5,7 +5,7 @@
 #include <future>
 #include "core/utils.h"
 #include "core/timer.h"
-#include "core/properties.h"
+#include "core/core_workload.h"
 
 #include <stdio.h>
 #include <sys/socket.h>
@@ -49,7 +49,7 @@ __thread struct conn_info * info;
 
 using namespace std;
 
-int ParseCommandLine(int argc, const char *argv[]);
+int ParseCommandLine(int argc, const char *argv[], utils::Properties &props);
 
 int AcceptConnection(int sock) {
     int c;
@@ -273,7 +273,6 @@ void * DelegateClient(void * arg) {
 
     int done = 0;
 
-
     int num_load_complete = 0;
 
     int epfd;
@@ -293,6 +292,12 @@ void * DelegateClient(void * arg) {
 
     int num_flows = stoi(props.GetProperty("num_flows", "1"));
 
+    int port = stoi(props["port"]);
+
+    int num_complete = 0;
+
+    int oks = 0;
+
     while(!done) {
         while(num_conn < num_flows) {
             /* Connect server */
@@ -303,7 +308,7 @@ void * DelegateClient(void * arg) {
                 conn_info->sockfd = sock;
                 conn_info->epfd = epfd;
 
-                conn_info->total_ops = stoi(props.GetProperty("count", "1"));
+                conn_info->total_ops = stoi(props.GetProperty("count", "1")) / num_flows;
                 conn_info->actual_ops = 0;
 
                 num_conn++;
@@ -335,6 +340,8 @@ void * DelegateClient(void * arg) {
                     if (strcmp(buff, "+OK\n")) {
                         fprintf(stderr, " Weird reply...\n");
                     }
+
+                    oks++;
 
                     /* Increase actual ops */
                     if(++info->actual_ops == info->total_ops) {
@@ -373,7 +380,7 @@ void * DelegateClient(void * arg) {
     double duration = timer.End();
 
     fprintf(stdout, " [core %d] # Transaction throughput : %.2f (KTPS) \t %s\n", \
-                    core_id, total_ops / duration / 1000, props["dbname"].c_str());
+                    core_id, oks / duration / 1000, props["dbname"].c_str());
     fflush(stdout);
     
     return NULL;
