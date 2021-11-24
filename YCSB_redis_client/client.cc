@@ -14,7 +14,7 @@
 #include "core/utils.h"
 #include "core/timer.h"
 #include "core/client.h"
-#include "core/parser.h"
+#include "core/parse.h"
 #include "core/core_workload.h"
 #include "db/db_factory.h"
 
