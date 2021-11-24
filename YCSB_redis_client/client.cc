@@ -39,6 +39,13 @@ void UsageMessage(const char *command);
 bool StrStartWith(const char *str, const char *pre);
 string ParseCommandLine(int argc, const char *argv[], utils::Properties &props);
 
+#define REDIS_REPLY_STRING 1
+#define REDIS_REPLY_ARRAY 2
+#define REDIS_REPLY_INTEGER 3
+#define REDIS_REPLY_NIL 4
+#define REDIS_REPLY_STATUS 5
+#define REDIS_REPLY_ERROR 6
+
 /* State for the protocol parser */
 struct reader {
     char * buf; /* Read buffer */
@@ -144,15 +151,28 @@ int parseReply(struct reader * r, struct reply * reply) {
         if (p[0] == '-') {
             fprintf(stdout, " - REDIS_REPLY_ERROR");
             reply->type = REDIS_REPLY_ERROR;
-            return reply;
+            if ((s = readLine(r,&len)) != NULL) {
+                return 0;
+            } else {
+                return -1;
+            }
         } else if (p[0] == '+') {
             fprintf(stdout, " + REDIS_REPLY_STATUS");
             reply->type = REDIS_REPLY_STATUS;
-            return reply;
+            if ((s = readLine(r,&len)) != NULL) {
+                return 0;
+            } else {
+                return -1;
+            }
         } else if (p[0] == ':') {
             fprintf(stdout, " : REDIS_REPLY_INTEGER");
             reply->type = REDIS_REPLY_INTEGER;
-            return reply;
+            if ((s = readLine(r,&len)) != NULL) {
+                reply->integer = readLongLong(s);
+                return 0;
+            } else {
+                return -1;
+            }
         } else if (p[0] == '$') {
             fprintf(stdout, " $ REDIS_REPLY_STRING");
             reply->type = REDIS_REPLY_STRING;
@@ -165,13 +185,15 @@ int parseReply(struct reader * r, struct reply * reply) {
                 if (reply->str = readLine(r, &read_len) != NULL) {
                     fprintf(stdout, " \t string: %s\n", reply->str);
                     if (reply->len == read_len) {
-                        return reply;
+                        return 0;
                     } else {
-                        return NULL;
+                        return -1;
                     }
                 } else {
-                    return NULL;
+                    return -1;
                 }
+            } else {
+                return -1;
             }
         } else if (p[0] == '*') {
             fprintf(stdout, " * REDIS_REPLY_ARRAY");
@@ -183,8 +205,13 @@ int parseReply(struct reader * r, struct reply * reply) {
                 fprintf(stdout, " \t Array len: %d\n", len);
                 reply->element = (struct reply **)calloc(reply->elements, sizeof(struct reply));
                 for (int i = 0; i < len; i++) {
-                    parseReply(r, reply->element[i]);
+                    if(parseReply(r, reply->element[i]) == -1) {
+                        return -1;
+                    }
                 }
+                return 0;
+            } else {
+                return -1;
             }
         }
     }
