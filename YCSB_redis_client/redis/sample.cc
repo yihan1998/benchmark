@@ -8,6 +8,8 @@
 using namespace std;
 using namespace ycsbc;
 
+typedef std::pair<std::string, std::string> KVPair;
+
 int main(int argc, const char *argv[]) {
   const char *host = (argc > 1) ? argv[1] : "127.0.0.1";
   int port = (argc > 2) ? atoi(argv[2]) : 6379;
@@ -37,12 +39,8 @@ int main(int argc, const char *argv[]) {
   }
 
   result.clear();
-  ret = db.Scan(key, key, value);
-  cout << value << endl;
+  std::vector<std::vector<KVPair>> records;
+  db.Scan(NULL, NULL, 0, records);
 
-  db.Delete(key, key);
-  result.clear();
-  ret = db.Read(key, key, value);
-  cout << "After delete: " << result.size() << endl;
   return 0;
 }
