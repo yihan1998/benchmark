@@ -13,8 +13,7 @@ namespace ycsbc {
 
 int RedisDB::Read(const std::string &table, const std::string &key, std::string &value) {
   redisReply *reply = (redisReply *)redisCommand(redis_.context(), "GET %s", key.c_str());
-  if (!reply) return DB::kOK;
-  cout << reply->str << endl;
+  if (!reply) return DB::kErrorNoData;
   value = string(reply->str);
   
   return DB::kOK;
@@ -23,6 +22,7 @@ int RedisDB::Read(const std::string &table, const std::string &key, std::string 
 int RedisDB::Update(const std::string &table, const std::string &key, const std::string &value) {
   redisReply *reply = (redisReply *)redisCommand(redis_.context(), "SET %s %s", key.c_str(), value.c_str());
   if (!reply) return DB::kOK;
+  cout << reply->str << endl;
   assert(strcmp(reply->str,"ok") == 0);
 
   return DB::kOK;;
