@@ -35,7 +35,7 @@ int RedisDB::Scan(const std::string &table, const std::string &key, int record_c
     redisReply *reply = (redisReply *)redisCommand(redis_.context(), "SCAN %d COUNT %d", 0, record_count);
     // redisReply *reply = (redisReply *)redisCommand(redis_.context(), "SCAN %d", 0);
     if (!reply) return DB::kOK;
-    index = atoi(reply->element[0]->str);
+    index = stoi(reply->element[0]->str);
     printf("index: %d\n",index);
     if(reply->elements == 1){
       printf("no data");

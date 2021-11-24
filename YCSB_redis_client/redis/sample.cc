@@ -19,7 +19,7 @@ int main(int argc, const char *argv[]) {
   cout << " ***** Generating Keys *****" << endl;
   int start = 0;
   std::string keys[20];
-  for (int i = 0; i < 10; i++) {
+  for (int i = 0; i < 20; i++) {
     std::string key("key");
     key.append(std::to_string(i));
     keys[i].assign(key);
@@ -27,15 +27,22 @@ int main(int argc, const char *argv[]) {
   }
 
   RedisDB db(host, port, false);
-  db.Init();
+  db.Init(8,16);
   vector<DB::KVPair> result;
 
   cout << " ***** Inserting Keys *****" << endl;
-  for (int i = 0; i < 10; i++) {
+  for (int i = 0; i < 20; i++) {
     string value;
     value.append(16, 'a' + rand() % 26);
     cout << value << endl;
     db.Update(keys[i], keys[i], value);
+  }
+
+  cout << " ***** Reading Keys *****" << endl;
+  for (int i = 0; i < 20; i++) {
+    string value;
+    db.Read(keys[i], keys[i], value);
+    cout << value << endl;
   }
 
   result.clear();
