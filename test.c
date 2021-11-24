@@ -153,7 +153,7 @@ int parseReply(struct reader * r, struct reply * reply) {
                 reply->len = readLongLong(s);
                 fprintf(stdout, " \t string len: %d\n", reply->len);
                 int read_len;
-                if (reply->str = readLine(r, &read_len) != NULL) {
+                if ((reply->str = readLine(r, &read_len)) != NULL) {
                     fprintf(stdout, " \t string: %s\n", reply->str);
                     if (reply->len == read_len) {
                         return 0;
