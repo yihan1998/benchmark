@@ -89,7 +89,7 @@ class Client {
     
         virtual int ReadRequest(char * request);
         virtual int ReadModifyWriteRequest(char * request);
-        virtual int ScanRequest(char * request);
+        virtual int ScanRequest(char * request,, int cursor, int count);
         virtual int UpdateRequest(char * request);
         virtual int InsertRequest(char * request);
 
