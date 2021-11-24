@@ -282,6 +282,8 @@ inline int Client::ScanRequest(char * request, int cursor, int record_count) {
 
     strncpy(request, cmd.c_str(), len);
 
+    fprintf(stdout, " Scan request: %s\n", cmd);
+    
     request[len-1] = '\n';
 
     return len;
