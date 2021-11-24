@@ -29,7 +29,8 @@ int RedisDB::Update(const std::string &table, const std::string &key, const std:
 }
 
 int RedisDB::Scan(const std::string &table, const std::string &key, int record_count, std::vector<std::vector<KVPair>> &records) {
-  redisReply *reply = (redisReply *)redisCommand(redis_.context(), "SCAN %d COUNT %d", 0, record_count);
+  // redisReply *reply = (redisReply *)redisCommand(redis_.context(), "SCAN %d COUNT %d", 0, record_count);
+  redisReply *reply = (redisReply *)redisCommand(redis_.context(), "SCAN %d", 0);
   if (!reply) return DB::kOK;
   int index = atoi(reply->element[0]->str);
   printf("index: %d",index);
