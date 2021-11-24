@@ -5,6 +5,7 @@
 #include <future>
 #include "core/utils.h"
 #include "core/timer.h"
+#include "properties.h"
 
 #include <stdio.h>
 #include <sys/socket.h>
@@ -218,8 +219,8 @@ void * DelegateServer(void * arg) {
 
     double duration = timer.End();
 
-    fprintf(stdout, " [core %d] # Transaction throughput : %.2f (KTPS) \t %s\n", \
-                    core_id, total_ops / duration / 1000, props["dbname"].c_str());
+    fprintf(stdout, " [core %d] # Transaction throughput : %.2f (KTPS)\n", \
+                    core_id, oks / duration / 1000);
     fflush(stdout);
     
     return NULL;
