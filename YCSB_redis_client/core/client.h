@@ -270,7 +270,7 @@ inline int Client::ScanRequest(char * request, int cursor, int record_count) {
     const std::string &key = workload_.NextTransactionKey();
 
     std::string cmd("SCAN");
-    std::string count("COUNT")
+    std::string count("COUNT");
     std::string cursor_s = std::to_string(cursor);
     std::string record_count_s = std::to_string(record_count);
     size_t len = cmd.length() + 1 + cursor.length() + 1 + cursor_s.length() + 1 + record_count_s.length() + 1;
