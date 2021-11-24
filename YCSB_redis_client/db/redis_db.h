@@ -28,9 +28,7 @@ class RedisDB : public DB {
   int Read(const std::string &table, const std::string &key, std::string &value);
 
   int Scan(const std::string &table, const std::string &key,
-           int record_count, std::vector<std::vector<KVPair>> &records) {
-    throw "Scan: function not implemented!";
-  }
+           int record_count, std::vector<std::vector<KVPair>> &records);
 
   int Update(const std::string &table, const std::string &key,
              const std::string &value);

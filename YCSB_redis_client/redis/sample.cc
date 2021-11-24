@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <random>
 #include "redis/redis_client.h"
 #include "db/redis_db.h"
 
@@ -13,23 +14,30 @@ int main(int argc, const char *argv[]) {
 
   RedisClient client(host, port, 0);
 
-  client.Command("HMSET Ren field1 jinglei@ren.systems field2 Jinglei");
+  cout << " ***** Generating Keys *****" << endl;
+  int start = 0;
+  std::string keys[20];
+  for (int i = 0; i < 10; i++) {
+    std::string key("key");
+    key.append(std::to_string(i));
+    keys[i].assign(key);
+    cout << keys[i] << endl;
+  }
 
   RedisDB db(host, port, false);
   db.Init();
-  string key = "Ren";
   vector<DB::KVPair> result;
 
-  std::string value;
-  int ret;
-  ret = db.Read(key, key, value);
-  cout << value << endl;
-
-  string new_value = "HelloWorld!";
-  db.Update(key, key, new_value);
+  cout << " ***** Inserting Keys *****" << endl;
+  for (int i = 0; i < 10; i++) {
+    string value;
+    value.append(16, 'a' + rand() % 26);
+    cout << value << endl;
+    db.Update(keys[i], keys[i], value);
+  }
 
   result.clear();
-  ret = db.Read(key, key, value);
+  ret = db.Scan(key, key, value);
   cout << value << endl;
 
   db.Delete(key, key);

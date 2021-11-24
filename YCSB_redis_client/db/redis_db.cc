@@ -12,61 +12,41 @@ using namespace std;
 namespace ycsbc {
 
 int RedisDB::Read(const std::string &table, const std::string &key, std::string &value) {
-  // if (fields) {
-  //   int argc = fields->size() + 2;
-  //   const char *argv[argc];
-  //   size_t argvlen[argc];
-  //   int i = 0;
-  //   argv[i] = "HMGET"; argvlen[i] = strlen(argv[i]);
-  //   argv[++i] = key.c_str(); argvlen[i] = key.length();
-  //   for (const string &f : *fields) {
-  //     argv[++i] = f.data(); argvlen[i] = f.size();
-  //   }
-  //   assert(i == argc - 1);
-  //   redisReply *reply = (redisReply *)redisCommandArgv(
-  //       redis_.context(), argc, argv, argvlen);
-  //   if (!reply) return DB::kOK;
-  //   assert(reply->type == REDIS_REPLY_ARRAY);
-  //   assert(fields->size() == reply->elements);
-  //   for (size_t i = 0; i < reply->elements; ++i) {
-  //     const char *value = reply->element[i]->str;
-  //     result.push_back(make_pair(fields->at(i), string(value ? value : "")));
-  //   }
-  //   freeReplyObject(reply);
-  // } else {
-  //   redisReply *reply = (redisReply *)redisCommand(redis_.context(),
-  //       "HGETALL %s", key.c_str());
-  //   if (!reply) return DB::kOK;
-  //   assert(reply->type == REDIS_REPLY_ARRAY);
-  //   for (size_t i = 0; i < reply->elements / 2; ++i) {
-  //     result.push_back(make_pair(
-  //         string(reply->element[2 * i]->str),
-  //         string(reply->element[2 * i + 1]->str)));
-  //   }
-  //   freeReplyObject(reply);
-  // }
-  // return DB::kOK;
+  redisReply *reply = (redisReply *)redisCommand(redis_.context(), "SET %s %s", key.c_str(), value.c_str());
+  if (!reply) return DB::kOK;
+  assert(strcmp(reply->str,"hello world") == 0);
+
+  return len;
 }
 
-int RedisDB::Update(const std::string &table, const std::string &key,
-                     const std::string &value) {
-  // string cmd("HMSET");
-  // size_t len = cmd.length() + key.length() + 1;
-  // for (KVPair &p : values) {
-  //   len += p.first.length() + p.second.length() + 2;
-  // }
-  // cmd.reserve(len);
+int RedisDB::Update(const std::string &table, const std::string &key, const std::string &value) {
+  redisReply *reply = (redisReply *)redisCommand(redis_.context(), "GET %s", key.c_str());
+  if (!reply) return DB::kOK;
+  value.assign(reply->str);
 
-  // cmd.append(" ").append(key);
-  // for (KVPair &p : values) {
-  //   assert(p.first.find(' ') == string::npos);
-  //   cmd.append(" ").append(p.first);
-  //   assert(p.second.find(' ') == string::npos);
-  //   cmd.append(" ").append(p.second);
-  // }
-  // assert(cmd.length() == len);
-  // redis_.Command(cmd);
-  // return DB::kOK;
+  return DB::kOK;;
+}
+
+int RedisDB::Scan(const std::string &table, const std::string &key, int record_count) {
+  redisReply *reply = (redisReply *)redisCommand(redis_.context(), "SCAN %s COUNT %d", key.c_str(), record_count);
+  if (!reply) return DB::kOK;
+  int index = atoi(reply->element[0]->str);
+  printf("index: %d",index);
+  if(reply->elements == 1){
+    printf("no data");
+    break;
+  }
+  if (reply->element[1]->type != REDIS_REPLY_ARRAY) {
+    printf("redis scan keys reply not array");
+    freeReplyObject(_reply);
+    break;
+  }
+  for (int i = 0; i < reply->element[1]->elements; i++) {
+    string key = reply->element[1]->element[i]->str;
+    printf("i: %d,key: %d\n",i,key);
+  }
+
+  return DB::kOK;
 }
 
 } // namespace ycsbc
