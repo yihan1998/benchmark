@@ -207,12 +207,11 @@ void * DelegateServer(void * arg) {
 
                 int service_time = 1;
                 if (sscanf(recv_buff, "SERVICE_TIME = %d\n", &service_time) == 1) {
-                    struct timeval start;
+                    struct timeval start, curr;
                     gettimeofday(&start, NULL);
                     do {
-                        struct timeval curr;
                         gettimeofday(&curr, NULL);
-                    } while((TIMEVAL_TO_USEC(curr) - TIMEVAL_TO_USEC(start) < service_time) || (TIMEVAL_TO_USEC(curr) - TIMEVAL_TO_USEC(start) > 120));
+                    } while((TIMEVAL_TO_USEC(curr) - TIMEVAL_TO_USEC(start) < service_time) || (TIMEVAL_TO_USEC(curr) - TIMEVAL_TO_USEC(start) < 120));
                 }
 
                 char reply_buff[buff_size];
