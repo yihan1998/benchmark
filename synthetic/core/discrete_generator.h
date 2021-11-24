@@ -1,13 +1,5 @@
-//
-//  discrete_generator.h
-//  YCSB-C
-//
-//  Created by Jinglei Ren on 12/6/14.
-//  Copyright (c) 2014 Jinglei Ren <jinglei@ren.systems>.
-//
-
-#ifndef YCSB_C_DISCRETE_GENERATOR_H_
-#define YCSB_C_DISCRETE_GENERATOR_H_
+#ifndef _DISCRETE_GENERATOR_H_
+#define _DISCRETE_GENERATOR_H_
 
 #include "generator.h"
 
@@ -16,8 +8,6 @@
 #include <mutex>
 #include <vector>
 #include "utils.h"
-
-namespace ycsbc {
 
 template <typename Value>
 class DiscreteGenerator : public Generator<Value> {
@@ -61,6 +51,4 @@ inline Value DiscreteGenerator<Value>::Next() {
   return last_;
 }
 
-} // ycsbc
-
-#endif // YCSB_C_DISCRETE_GENERATOR_H_
+#endif // _DISCRETE_GENERATOR_H_

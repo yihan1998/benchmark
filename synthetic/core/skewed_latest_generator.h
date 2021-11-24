@@ -1,13 +1,5 @@
-//
-//  skewed_latest_generator.h
-//  YCSB-C
-//
-//  Created by Jinglei Ren on 12/9/14.
-//  Copyright (c) 2014 Jinglei Ren <jinglei@ren.systems>.
-//
-
-#ifndef YCSB_C_SKEWED_LATEST_GENERATOR_H_
-#define YCSB_C_SKEWED_LATEST_GENERATOR_H_
+#ifndef _SKEWED_LATEST_GENERATOR_H_
+#define _SKEWED_LATEST_GENERATOR_H_
 
 #include "generator.h"
 
@@ -15,8 +7,6 @@
 #include <cstdint>
 #include "counter_generator.h"
 #include "zipfian_generator.h"
-
-namespace ycsbc {
 
 class SkewedLatestGenerator : public Generator<uint64_t> {
  public:
@@ -38,6 +28,4 @@ inline uint64_t SkewedLatestGenerator::Next() {
   return last_ = max - zipfian_.Next(max);
 }
 
-} // ycsbc
-
-#endif // YCSB_C_SKEWED_LATEST_GENERATOR_H_
+#endif // _SKEWED_LATEST_GENERATOR_H_

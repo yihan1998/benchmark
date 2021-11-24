@@ -1,21 +1,11 @@
-//
-//  zipfian_generator.h
-//  YCSB-C
-//
-//  Created by Jinglei Ren on 12/7/14.
-//  Copyright (c) 2014 Jinglei Ren <jinglei@ren.systems>.
-//
-
-#ifndef YCSB_C_ZIPFIAN_GENERATOR_H_
-#define YCSB_C_ZIPFIAN_GENERATOR_H_
+#ifndef _ZIPFIAN_GENERATOR_H_
+#define _ZIPFIAN_GENERATOR_H_
 
 #include <cassert>
 #include <cmath>
 #include <cstdint>
 #include <mutex>
 #include "utils.h"
-
-namespace ycsbc {
 
 class ZipfianGenerator : public Generator<uint64_t> {
  public:
@@ -117,6 +107,4 @@ inline uint64_t ZipfianGenerator::Last() {
   return last_value_;
 }
 
-}
-
-#endif // YCSB_C_ZIPFIAN_GENERATOR_H_
+#endif // _ZIPFIAN_GENERATOR_H_

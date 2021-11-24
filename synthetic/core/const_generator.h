@@ -1,18 +1,8 @@
-//
-//  const_generator.h
-//  YCSB-C
-//
-//  Created by Jinglei Ren on 12/10/14.
-//  Copyright (c) 2014 Jinglei Ren <jinglei@ren.systems>.
-//
-
-#ifndef YCSB_C_CONST_GENERATOR_H_
-#define YCSB_C_CONST_GENERATOR_H_
+#ifndef _CONST_GENERATOR_H_
+#define _CONST_GENERATOR_H_
 
 #include "generator.h"
 #include <cstdint>
-
-namespace ycsbc {
 
 class ConstGenerator : public Generator<uint64_t> {
  public:
@@ -23,6 +13,4 @@ class ConstGenerator : public Generator<uint64_t> {
   uint64_t constant_;
 };
 
-} // ycsbc
-
-#endif // YCSB_C_CONST_GENERATOR_H_
+#endif // _CONST_GENERATOR_H_

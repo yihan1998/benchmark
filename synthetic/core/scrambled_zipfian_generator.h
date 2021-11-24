@@ -1,13 +1,5 @@
-//
-//  scrambled_zipfian_generator.h
-//  YCSB-C
-//
-//  Created by Jinglei Ren on 12/8/14.
-//  Copyright (c) 2014 Jinglei Ren <jinglei@ren.systems>.
-//
-
-#ifndef YCSB_C_SCRAMBLED_ZIPFIAN_GENERATOR_H_
-#define YCSB_C_SCRAMBLED_ZIPFIAN_GENERATOR_H_
+#ifndef _SCRAMBLED_ZIPFIAN_GENERATOR_H_
+#define _SCRAMBLED_ZIPFIAN_GENERATOR_H_
 
 #include "generator.h"
 
@@ -15,8 +7,6 @@
 #include <cstdint>
 #include "utils.h"
 #include "zipfian_generator.h"
-
-namespace ycsbc {
 
 class ScrambledZipfianGenerator : public Generator<uint64_t> {
  public:
@@ -51,6 +41,4 @@ inline uint64_t ScrambledZipfianGenerator::Last() {
   return Scramble(generator_.Last());
 }
 
-}
-
-#endif // YCSB_C_SCRAMBLED_ZIPFIAN_GENERATOR_H_
+#endif // _SCRAMBLED_ZIPFIAN_GENERATOR_H_
