@@ -12,17 +12,17 @@ using namespace std;
 namespace ycsbc {
 
 int RedisDB::Read(const std::string &table, const std::string &key, std::string &value) {
-  redisReply *reply = (redisReply *)redisCommand(redis_.context(), "SET %s %s", key.c_str(), value.c_str());
+  redisReply *reply = (redisReply *)redisCommand(redis_.context(), "GET %s", key.c_str());
   if (!reply) return DB::kOK;
-  assert(strcmp(reply->str,"hello world") == 0);
-
-  return len;
+  value = string(reply->str);
+  
+  return DB::kOK;
 }
 
 int RedisDB::Update(const std::string &table, const std::string &key, const std::string &value) {
-  redisReply *reply = (redisReply *)redisCommand(redis_.context(), "GET %s", key.c_str());
+  redisReply *reply = (redisReply *)redisCommand(redis_.context(), "SET %s %s", key.c_str(), value.c_str());
   if (!reply) return DB::kOK;
-  value.assign(reply->str);
+  assert(strcmp(reply->str,"ok") == 0);
 
   return DB::kOK;;
 }
