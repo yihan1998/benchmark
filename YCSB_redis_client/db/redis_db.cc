@@ -14,6 +14,7 @@ namespace ycsbc {
 int RedisDB::Read(const std::string &table, const std::string &key, std::string &value) {
   redisReply *reply = (redisReply *)redisCommand(redis_.context(), "GET %s", key.c_str());
   if (!reply) return DB::kOK;
+  cout << reply->str << endl;
   value = string(reply->str);
   
   return DB::kOK;
