@@ -27,7 +27,7 @@ int main(int argc, const char *argv[]) {
   }
 
   RedisDB db(host, port, false);
-  db.Init(8,16);
+  db.Init();
   vector<DB::KVPair> result;
 
   cout << " ***** Inserting Keys *****" << endl;
