@@ -273,7 +273,7 @@ inline int Client::ScanRequest(char * request, int cursor, int record_count) {
     std::string count("COUNT");
     std::string cursor_s = std::to_string(cursor);
     std::string record_count_s = std::to_string(record_count);
-    size_t len = cmd.length() + 1 + cursor.length() + 1 + cursor_s.length() + 1 + record_count_s.length() + 1;
+    size_t len = cmd.length() + 1 + cursor_s.length() + 1 + count.length() + 1 + record_count_s.length() + 1;
     cmd.reserve(len);
 
     cmd.append(" ").append(cursor_s);
