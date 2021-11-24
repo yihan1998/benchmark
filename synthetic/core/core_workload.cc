@@ -19,10 +19,12 @@ void CoreWorkload::Init(const utils::Properties &p) {
 
     record_count_ = std::stoi(p.GetProperty(RECORD_COUNT_PROPERTY));
     
-    if (distribution == "uniform") {
+    if (distribution == "constant") {
+        service_time_chooser_ = new ConstGenerator(1);
+    } else if (distribution == "uniform") {
         service_time_chooser_ = new UniformGenerator(0, count_ - 1);
     } else if (distribution == "zipfian") {
-        service_time_chooser_ = new ZipfianGenerator(1, record_count_);
+        service_time_chooser_ = new ZipfianGenerator(1, count_);
     } else {
         throw utils::Exception("Unknown request distribution: " + distribution);
     }
