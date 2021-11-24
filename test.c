@@ -172,13 +172,14 @@ int parseReply(struct reader * r, struct reply * reply) {
             char * s;
             int len;
             if ((s = readLine(r,&len)) != NULL) {
-                reply->elements = len;
-                fprintf(stdout, " \t Array len: %d\n", len);
+                reply->elements = readLongLong(s);
+                fprintf(stdout, " \t Array len: %d\n", reply->elements);
                 reply->element = (struct reply **)calloc(reply->elements, sizeof(struct reply));
-                for (int i = 0; i < len; i++) {
+                for (int i = 0; i < reply->elements; i++) {
                     if(parseReply(r, reply->element[i]) == -1) {
                         return -1;
                     }
+                    fprintf(stdout, " \t %d : %s\n", i, reply->element[i]->str);
                 }
                 return 0;
             } else {
