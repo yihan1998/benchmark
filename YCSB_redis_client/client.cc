@@ -107,10 +107,12 @@ double LoadRecord(int epfd, struct epoll_event * events, ycsbc::Client &client, 
 
                 struct reply * reply = getReply(info->ibuf, info->ioff);
                 if (!reply) {
+                    freeReply(reply);
                     continue;
                 }
-                
+
                 info->ioff = 0;
+                freeReply(reply);
 
                 /* Increase actual ops */
                 if(++info->actual_record_ops == info->total_record_ops) {
@@ -202,6 +204,7 @@ double PerformTransaction(int epfd, struct epoll_event * events, ycsbc::Client &
 
                 struct reply * reply = getReply(info->ibuf, info->ioff);
                 if (!reply) {
+                    freeReply(reply);
                     continue;
                 }
                 
@@ -221,6 +224,8 @@ double PerformTransaction(int epfd, struct epoll_event * events, ycsbc::Client &
                         done = 1;
                     }
                 }
+
+                freeReply(reply);
                 
                 struct epoll_event ev;
                 ev.events = EPOLLIN | EPOLLOUT;
