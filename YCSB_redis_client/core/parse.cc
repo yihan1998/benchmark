@@ -1,5 +1,14 @@
 #include "parse.h"
 
+int freeReply(struct reply * r) {
+    if (r->type == REDIS_REPLY_ARRAY) {
+        for (int i = 0; i < r->elements; i++) {
+            freeReply(r->element[i]);
+        }
+    }
+    return 0;
+}
+
 static char * readBytes(struct reader * r, unsigned int bytes) {
     char * p;
     if (r->len-r->pos >= bytes) {
@@ -86,7 +95,7 @@ int parseReply(struct reader * r, struct reply * reply) {
     // fprintf(stdout, " [%s:%d] remain to parse: %.*s\n", __func__, __LINE__, r->len - r->pos, r->buf + r->pos);
     if ((p = readBytes(r, 1)) != NULL) {
         if (p[0] == '-') {
-            fprintf(stdout, " - REDIS_REPLY_ERROR\n");
+            // fprintf(stdout, " - REDIS_REPLY_ERROR\n");
             reply->type = REDIS_REPLY_ERROR;
             char * s;
             int len;
@@ -96,7 +105,7 @@ int parseReply(struct reader * r, struct reply * reply) {
                 return -1;
             }
         } else if (p[0] == '+') {
-            fprintf(stdout, " + REDIS_REPLY_STATUS\n");
+            // fprintf(stdout, " + REDIS_REPLY_STATUS\n");
             reply->type = REDIS_REPLY_STATUS;
             char * s;
             int len;
@@ -106,7 +115,7 @@ int parseReply(struct reader * r, struct reply * reply) {
                 return -1;
             }
         } else if (p[0] == ':') {
-            fprintf(stdout, " : REDIS_REPLY_INTEGER\n");
+            // fprintf(stdout, " : REDIS_REPLY_INTEGER\n");
             reply->type = REDIS_REPLY_INTEGER;
             char * s;
             int len;
@@ -117,19 +126,19 @@ int parseReply(struct reader * r, struct reply * reply) {
                 return -1;
             }
         } else if (p[0] == '$') {
-            fprintf(stdout, " $ REDIS_REPLY_STRING\n");
+            // fprintf(stdout, " $ REDIS_REPLY_STRING\n");
             reply->type = REDIS_REPLY_STRING;
             char * s;
             int len;
             if ((s = readLine(r,&len)) != NULL) {
                 reply->len = readLongLong(s);
-                fprintf(stdout, " \t string len: %d\n", reply->len);
+                // fprintf(stdout, " \t string len: %d\n", reply->len);
                 if (reply->len == -1) {
                     return 0;
                 }
                 int read_len;
                 if ((reply->str = readLine(r, &read_len)) != NULL) {
-                    fprintf(stdout, " \t string: %s\n", reply->str);
+                    // fprintf(stdout, " \t string: %s\n", reply->str);
                     if (reply->len == read_len) {
                         return 0;
                     } else {
@@ -142,7 +151,7 @@ int parseReply(struct reader * r, struct reply * reply) {
                 return -1;
             }
         } else if (p[0] == '*') {
-            fprintf(stdout, " * REDIS_REPLY_ARRAY\n");
+            // fprintf(stdout, " * REDIS_REPLY_ARRAY\n");
             reply->type = REDIS_REPLY_ARRAY;
             char * s;
             int len;
@@ -156,7 +165,7 @@ int parseReply(struct reader * r, struct reply * reply) {
                     if(parseReply(r, reply->element[i]) == -1) {
                         return -1;
                     }
-                    fprintf(stdout, " [%s:%d] Array[%d] : %s\n", __func__, __LINE__, i, reply->element[i]);
+                    // fprintf(stdout, " [%s:%d] Array[%d] : %s\n", __func__, __LINE__, i, reply->element[i]);
                 }
                 return 0;
             } else {

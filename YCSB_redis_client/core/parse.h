@@ -31,6 +31,7 @@ struct reply {
     struct reply ** element; /* elements vector for REDIS_REPLY_ARRAY */
 };
 
-struct reply * getReply(char * buf, int len);
+extern int freeReply(struct reply * r);
+extern struct reply * getReply(char * buf, int len);
 
 #endif // !_PARSER_H_
