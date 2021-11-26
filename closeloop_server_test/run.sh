@@ -16,34 +16,34 @@ make clean && make
 
 rm throughput_*.txt
 
-dir="/proc/irq/"
-file_list=`ls $dir`
+# dir="/proc/irq/"
+# file_list=`ls $dir`
 
-new_cpu_mask=0
+# new_cpu_mask=0
 
-for i in $(seq 1 $num_cores); do
-    cpu_id=$(( 1<<i ))
-    new_cpu_mask=$(( new_cpu_mask|cpu_id ))
-done
+# for i in $(seq 1 $num_cores); do
+#     cpu_id=$(( 1<<i ))
+#     new_cpu_mask=$(( new_cpu_mask|cpu_id ))
+# done
 
-printf "Setting new cpu mask to %x\n" $new_cpu_mask
+# printf "Setting new cpu mask to %x\n" $new_cpu_mask
 
-old_cpu_mask=fffff
+# old_cpu_mask=fffff
 
-for file in $file_list
-do 
-    file_path=$dir$file
-    if [[ $file == "default_smp_affinity" ]] ; then
-        # printf "Setting new cpu mask to %s\n" $file_path
-        echo $new_cpu_mask > $file_path
-    fi
-    if [[ -d $file_path ]] ; then
-        file_name="smp_affinity"
-        file_path="${file_path}/${file_name}"
-        # printf "Setting new cpu mask to %s\n" $file_path
-        echo $new_cpu_mask > $file_path
-    fi
-done
+# for file in $file_list
+# do 
+#     file_path=$dir$file
+#     if [[ $file == "default_smp_affinity" ]] ; then
+#         # printf "Setting new cpu mask to %s\n" $file_path
+#         echo $new_cpu_mask > $file_path
+#     fi
+#     if [[ -d $file_path ]] ; then
+#         file_name="smp_affinity"
+#         file_path="${file_path}/${file_name}"
+#         # printf "Setting new cpu mask to %s\n" $file_path
+#         echo $new_cpu_mask > $file_path
+#     fi
+# done
 
 for j in $(seq 0 13)
 do
@@ -63,17 +63,17 @@ do
     echo "Test done"
 done
 
-for file in $file_list
-do 
-    file_path=$dir$file
-    if [[ $file == "default_smp_affinity" ]] ; then
-        # printf "Restoring cpu mask to %s\n" $file_path
-        echo $old_cpu_mask > $file_path
-    fi
-    if [[ -d $file_path ]] ; then
-        file_name="smp_affinity"
-        file_path="${file_path}/${file_name}"
-        # printf "Restoring cpu mask to %s\n" $file_path
-        echo $old_cpu_mask > $file_path
-    fi
-done
+# for file in $file_list
+# do 
+#     file_path=$dir$file
+#     if [[ $file == "default_smp_affinity" ]] ; then
+#         # printf "Restoring cpu mask to %s\n" $file_path
+#         echo $old_cpu_mask > $file_path
+#     fi
+#     if [[ -d $file_path ]] ; then
+#         file_name="smp_affinity"
+#         file_path="${file_path}/${file_name}"
+#         # printf "Restoring cpu mask to %s\n" $file_path
+#         echo $old_cpu_mask > $file_path
+#     fi
+# done
