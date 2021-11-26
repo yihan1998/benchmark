@@ -143,7 +143,7 @@ int handle_read_event(int epfd, int sockfd, struct param * vars) {
     info->num_trans++;
 
     if (info->num_trans == M_1) {
-        close_connection(epfd, sockfd, var);
+        close_connection(epfd, sockfd, vars);
         return;
     }
 
