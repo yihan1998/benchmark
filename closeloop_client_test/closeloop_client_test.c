@@ -356,8 +356,12 @@ void * RunClientThread(void * argv) {
             struct param * var = (struct param *)events[i].data.ptr;
             if ((events[i].events & EPOLLIN) && var->type == TIMER_VAR && var->sockfd == timerfd) {   
                 printf(" >> Time's up\n");
-                handle_timeup_event(epfd, timerfd);
-                if (num_complete == num_flow) {
+                // handle_timeup_event(epfd, timerfd);
+                // if (num_complete == num_flow) {
+                //     done = 1;
+                //     break;
+                // }
+                if (!num_connection) {
                     done = 1;
                     break;
                 }
