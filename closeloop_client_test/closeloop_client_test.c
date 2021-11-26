@@ -241,6 +241,14 @@ void * RunClientThread(void * argv) {
     int core_id = thread_arg->core_id;
     char * server_ip = thread_arg->ip_addr;
 
+    input_file = (char *)malloc(M_128);
+    
+    FILE * fp = fopen("input.dat", "rb");
+
+    fread(input_file, 1, M_128, fp);
+
+    fclose(fp);
+
 #if defined(EVAL_TAS_BIND) || defined(EVAL_TAS_SEP)
     int server_port = (core_id % num_server_core + 1) << 12;
     printf(" [%s] test tas: connecting to port %x\n", __func__, server_port);
@@ -402,14 +410,6 @@ int main(int argc, char * argv[]) {
     }
 
     signal(SIGINT, handle_signal);
-
-    input_file = (char *)malloc(M_128);
-    
-    FILE * fp = fopen("input.dat", "rb");
-
-    fread(input_file, 1, M_128, fp);
-
-    fclose(fp);
 
     for (int i = 0; i < num_cores; i++) {
         thread_arg[i].core_id = i;
