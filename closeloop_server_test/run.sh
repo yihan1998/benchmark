@@ -51,7 +51,7 @@ do
 
     echo "Testing RTT for $num_connection connections..."
 
-    ifconfig enp1s0f0 10.0.1.1 netmask 255.255.255.0
+    # ifconfig enp1s0f0 10.0.1.1 netmask 255.255.255.0
 
     ./server    --size=$buff_size \
                 --time=$test_time \
