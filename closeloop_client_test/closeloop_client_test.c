@@ -131,7 +131,7 @@ int handle_read_event(int epfd, int sockfd, struct param * vars) {
     char recv_buff[buff_size];
     
     int len = read(sockfd, recv_buff, buff_size);
-    printf(" [%s] recv %d bytes, %.*s\n", __func__, len, len, recv_buff);
+    // printf(" [%s] recv %d bytes, %.*s\n", __func__, len, len, recv_buff);
     
     if(len <= 0) {
         return len;
@@ -173,7 +173,7 @@ handle_write_event(int epfd, int sockfd, struct param * vars) {
     }
 
     int send_len = write(sockfd, info->file_ptr, buff_size);
-    printf(" [%s] send %d bytes, %.*s\n", __func__, send_len, send_len, info->file_ptr);
+    // printf(" [%s] send %d bytes, %.*s\n", __func__, send_len, send_len, info->file_ptr);
 
     if(send_len < 0) {
         return send_len;
