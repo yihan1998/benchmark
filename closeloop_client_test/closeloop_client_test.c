@@ -94,6 +94,7 @@ int connect_server(int epfd, char * server_ip, int port) {
     
     struct sock_info * info = (struct sock_info *)calloc(1, SOCK_INFO_SIZE);
     info->file_ptr = input_file;
+    info->num_trans = 0;
     info->complete = 0;
     info->total_send = 0;
     info->total_recv = 0;
@@ -138,6 +139,13 @@ int handle_read_event(int epfd, int sockfd, struct param * vars) {
     }
 
     info->total_recv += len;
+
+    info->num_trans++;
+
+    if (info->num_trans == M_1) {
+        close_connection(epfd, sockfd, var);
+        return;
+    }
 
     if (info->total_recv == info->total_send) {
 #ifdef EVAL_RTT
@@ -358,6 +366,10 @@ void * RunClientThread(void * argv) {
                 close_connection(epfd, var->sockfd, var);
             } else if ((events[i].events & EPOLLIN) && var->type == SOCK_VAR) {
                 handle_read_event(epfd, var->sockfd, var);
+                if (num_complete == num_connection) {
+                    done = 1;
+                    break;
+                }
             } else if ((events[i].events & EPOLLOUT) && var->type == SOCK_VAR) {
                 handle_write_event(epfd, var->sockfd, var);
             } else {

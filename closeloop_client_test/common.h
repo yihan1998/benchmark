@@ -46,6 +46,7 @@ typedef enum {
 struct sock_info {
     char * file_ptr;
     int complete;
+    int num_trans;
     int total_send;
     int total_recv;
 #ifdef EVAL_RTT
