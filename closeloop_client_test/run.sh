@@ -46,18 +46,14 @@ do
 
     echo "Testing RTT for $total_conn connections on $num_cores core(s), each have $num_flow connection(s) ..."
     
-    ifconfig enp1s0f0 10.0.1.2 netmask 255.255.255.0
+    # ifconfig enp1s0f0 10.0.1.2 netmask 255.255.255.0
 
-    for i in `seq 1 $num_cores`
-    do
-
-        ./client    --server_ip=$server_ip \
-                    --server_port=$server_port \
-                    --size=$buff_size \
-                    --time=$test_time \
-                    --num_flow=$num_flow \
-                    --core_id=$i &
-    done
+    ./client    --server_ip=$server_ip \
+                --server_port=$server_port \
+                --size=$buff_size \
+                --time=$test_time \
+                --num_flow=$num_flow \
+                --num_cores=$num_cores 
 
     wait
 
