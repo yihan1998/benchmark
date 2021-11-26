@@ -23,8 +23,7 @@ int num_server_core;
 int num_server_fp;
 int num_client_fp;
 
-__thread char input_file[M_512];
-__thread char * file_ptr;
+__thread char * input_file;
 
 int concurrency = 10000;
 
@@ -132,6 +131,7 @@ int handle_read_event(int epfd, int sockfd, struct param * vars) {
     char recv_buff[buff_size];
     
     int len = read(sockfd, recv_buff, buff_size);
+    printf(" [%s] recv %d bytes, %.*s\n", __func__, len, len, recv_buff);
     
     if(len <= 0) {
         return len;
@@ -173,7 +173,7 @@ handle_write_event(int epfd, int sockfd, struct param * vars) {
     }
 
     int send_len = write(sockfd, info->file_ptr, buff_size);
-    //printf(" [%s] send %d bytes\n", __func__, send_len);
+    printf(" [%s] send %d bytes, %.*s\n", __func__, send_len, send_len, info->file_ptr);
 
     if(send_len < 0) {
         return send_len;
@@ -402,6 +402,14 @@ int main(int argc, char * argv[]) {
     }
 
     signal(SIGINT, handle_signal);
+
+    input_file = (char *)malloc(M_128);
+    
+    FILE * fp = fopen("input.dat", "rb");
+
+    fread(input_file, 1, M_128, fp);
+
+    fclose(fp);
 
     for (int i = 0; i < num_cores; i++) {
         thread_arg[i].core_id = i;
