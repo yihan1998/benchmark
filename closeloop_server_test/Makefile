@@ -118,7 +118,7 @@ MTCP_INC    =-I${MTCP_FLD}/include -I${MTCP_FLD}/src/include
 MTCP_LIB    =-L${MTCP_FLD}/lib
 MTCP_TARGET = ${MTCP_LIB}/libmtcp.a
 
-SRCS-y := server.cc $(MTCP_TARGET)
+SRCS-y := server.cc
 
 ifeq ($(CONFIG_RTE_LIBRTE_PMD_SOFTNIC), y)
 SRCS-y += softnicfwd.c
@@ -156,7 +156,7 @@ endif
 
 CFLAGS		+= -O3 -g -fno-stack-protector -I/usr/include/
 
-LDFLAGS 	+= 
+LDFLAGS 	+= -L/home/yihan/mtcp/mtcp/lib -l:libmtcp.a
 
 include $(RTE_SDK)/mk/rte.app.mk
 
