@@ -128,11 +128,11 @@ start_port(portid_t pid)
 	struct rte_eth_conf port_conf;
 	int ret;
 
-	nb_mbuf = RTE_TEST_RX_DESC_MAX +
+	unsigned nb_mbuf = RTE_TEST_RX_DESC_MAX +
 			(1 * mb_mempool_cache) +
 			RTE_TEST_TX_DESC_MAX + MAX_PKT_BURST;
 
-	struct rte_mempool * mp = rte_mp = rte_mempool_create_empty("mp", nb_mbuf,
+	struct rte_mempool * mp = rte_mempool_create_empty("mp", nb_mbuf,
 				DEFAULT_MBUF_DATA_SIZE, (unsigned int) mb_mempool_cache,
 				sizeof(struct rte_pktmbuf_pool_private),
 				socket_id, mempool_flags);
