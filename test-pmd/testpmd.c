@@ -470,9 +470,6 @@ signal_handler(int signum)
 		if (latencystats_enabled != 0)
 			rte_latencystats_uninit();
 #endif
-		force_quit();
-		/* Set flag to indicate the force termination. */
-		f_quit = 1;
 		/* exit with the expected status */
 		signal(signum, SIG_DFL);
 		kill(getpid(), signum);
