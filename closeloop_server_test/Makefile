@@ -120,10 +120,6 @@ MTCP_TARGET = ${MTCP_LIB}/libmtcp.a
 
 SRCS-y := server.cc
 
-ifeq ($(CONFIG_RTE_LIBRTE_PMD_SOFTNIC), y)
-SRCS-y += softnicfwd.c
-endif
-
 ifeq ($(CONFIG_RTE_BUILD_SHARED_LIB),y)
 
 ifeq ($(CONFIG_RTE_LIBRTE_PMD_BOND),y)
@@ -146,6 +142,10 @@ endif
 
 ifeq ($(CONFIG_RTE_LIBRTE_BNXT_PMD),y)
 LDLIBS += -lrte_pmd_bnxt
+endif
+
+ifeq ($(CONFIG_RTE_LIBRTE_PMD_SOFTNIC),y)
+LDLIBS += -lrte_pmd_softnic
 endif
 
 endif
