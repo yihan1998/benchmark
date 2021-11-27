@@ -1,7 +1,7 @@
 # RTE_SDK=/home/yihan/mtcp/dpdk
 # RTE_TARGET=x86_64-native-linuxapp-gcc
 
-TARGETS = server
+TARGET  = server
 CC		= g++
 DPDK	= 1
 PS		= 0
