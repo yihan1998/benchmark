@@ -156,7 +156,7 @@ endif
 
 CFLAGS		+= -O3 -g -fno-stack-protector -I/usr/include/ -I./include/ -I/home/yihan/mtcp/io_engine/include ${MTCP_INC} ${UTIL_INC}
 
-LDFLAGS 	+= -L/home/yihan/mtcp/mtcp/lib -l:libmtcp.a ${UTIL_OBJ}
+LDFLAGS 	+= -lnuma -lmtcp -lpthread -lrt -ldl -lgmp -L/home/yihan/mtcp/mtcp/lib -l:libmtcp.a ${UTIL_OBJ}
 
 include $(RTE_SDK)/mk/rte.app.mk
 
