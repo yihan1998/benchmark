@@ -150,7 +150,7 @@ endif
 
 endif
 
-CFLAGS		+= -O3 -g -fno-stack-protector -I/usr/include/ -I./include/ -I/home/yihan/mtcp/io_engine/include =-I/home/yihan/include -I/home/yihan/src/include
+CFLAGS		+= -O3 -g -fno-stack-protector -I/usr/include/ -I./include/ -I/home/yihan/mtcp/io_engine/include =-I${MTCP_FLD}/include -I${MTCP_FLD}/src/include
 
 LDFLAGS 	+= -L/home/yihan/mtcp/mtcp/lib -l:libmtcp.a
 
