@@ -148,10 +148,6 @@ ifeq ($(CONFIG_RTE_LIBRTE_BNXT_PMD),y)
 LDLIBS += -lrte_pmd_bnxt
 endif
 
-ifeq ($(CONFIG_RTE_LIBRTE_PMD_SOFTNIC),y)
-LDLIBS += -lrte_pmd_softnic
-endif
-
 endif
 
 CFLAGS		+= -O3 -g -fno-stack-protector -I/usr/include/
