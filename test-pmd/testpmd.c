@@ -161,7 +161,7 @@ start_port(portid_t pid)
 	struct rte_mempool * mp = rte_mempool_create("mempool",
 		MEMPOOL_SIZE,
 		MEMPOOL_ELT_SIZE,
-		RTE_MEMPOOL_CACHE_MAX_SIZE, 0,
+		0, 0,
 		NULL, 0, NULL, 0, rte_socket_id(), 0);
 
 	/* setting the rss key */
