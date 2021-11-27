@@ -79,6 +79,64 @@ signal_handler(int signum)
 	}
 }
 
+static const struct rte_eth_rxconf rx_conf = {
+	.rx_thresh = {
+		.pthresh = 		RX_PTHRESH, /* RX prefetch threshold reg */
+		.hthresh = 		RX_HTHRESH, /* RX host threshold reg */
+		.wthresh = 		RX_WTHRESH, /* RX write-back threshold reg */
+	},
+	.rx_free_thresh = 		32,
+};
+
+static const struct rte_eth_txconf tx_conf = {
+	.tx_thresh = {
+		.pthresh = 		TX_PTHRESH, /* TX prefetch threshold reg */
+		.hthresh = 		TX_HTHRESH, /* TX host threshold reg */
+		.wthresh = 		TX_WTHRESH, /* TX write-back threshold reg */
+	},
+	.tx_free_thresh = 		0, /* Use PMD default values */
+	.tx_rs_thresh = 		0, /* Use PMD default values */
+#if RTE_VERSION < RTE_VERSION_NUM(18, 5, 0, 0)
+	/*
+	 * As the example won't handle mult-segments and offload cases,
+	 * set the flag by default.
+	 */
+	.txq_flags = 			0x0,
+#endif
+};
+
+#define BUF_SIZE			2048
+#define MBUF_SIZE 			(BUF_SIZE + sizeof(struct rte_mbuf) + RTE_PKTMBUF_HEADROOM)
+#define NB_MBUF				8192
+#define MEMPOOL_CACHE_SIZE		256
+
+int
+start_port(portid_t pid)
+{
+	struct rte_eth_conf port_conf;
+	int ret;
+
+	struct rte_mempool * mp = rte_mempool_create("mempool", nb_mbuf,
+				MBUF_SIZE, MEMPOOL_CACHE_SIZE,
+				sizeof(struct rte_pktmbuf_pool_private),
+				rte_pktmbuf_pool_init, NULL,
+				rte_pktmbuf_init, NULL,
+				rte_socket_id(), MEMPOOL_F_SP_PUT |
+				MEMPOOL_F_SC_GET);
+
+	ret = rte_eth_dev_configure(pid, 1, 1, &port_conf);
+	if (ret < 0)
+		rte_exit(EXIT_FAILURE, "Cannot configure device: err=%d, port=%u, cores: %d\n",
+				ret, (unsigned) portid, CONFIG.num_cores);
+
+	ret = rte_eth_rx_queue_setup(pid, 0, 4096, rte_eth_dev_socket_id(pid), &rx_conf, mp);
+	if (ret < 0)
+		rte_exit(EXIT_FAILURE,
+				"rte_eth_rx_queue_setup:err=%d, port=%u, queueid: %d\n",
+				ret, (unsigned) pid, rxlcore_id);
+
+}
+
 int
 main(int argc, char** argv)
 {
@@ -91,5 +149,9 @@ main(int argc, char** argv)
 	if (diag < 0)
 		rte_exit(EXIT_FAILURE, "Cannot init EAL: %s\n",
 			 rte_strerror(rte_errno));
+
+	if (start_port(RTE_PORT_ALL) != 0)
+		rte_exit(EXIT_FAILURE, "Start ports failed\n");
+
 	return 0;
 }
