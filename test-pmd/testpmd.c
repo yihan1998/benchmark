@@ -79,32 +79,6 @@ signal_handler(int signum)
 	}
 }
 
-static const struct rte_eth_rxconf rx_conf = {
-	.rx_thresh = {
-		.pthresh = 		RX_PTHRESH, /* RX prefetch threshold reg */
-		.hthresh = 		RX_HTHRESH, /* RX host threshold reg */
-		.wthresh = 		RX_WTHRESH, /* RX write-back threshold reg */
-	},
-	.rx_free_thresh = 		32,
-};
-
-static const struct rte_eth_txconf tx_conf = {
-	.tx_thresh = {
-		.pthresh = 		TX_PTHRESH, /* TX prefetch threshold reg */
-		.hthresh = 		TX_HTHRESH, /* TX host threshold reg */
-		.wthresh = 		TX_WTHRESH, /* TX write-back threshold reg */
-	},
-	.tx_free_thresh = 		0, /* Use PMD default values */
-	.tx_rs_thresh = 		0, /* Use PMD default values */
-#if RTE_VERSION < RTE_VERSION_NUM(18, 5, 0, 0)
-	/*
-	 * As the example won't handle mult-segments and offload cases,
-	 * set the flag by default.
-	 */
-	.txq_flags = 			0x0,
-#endif
-};
-
 #define BUF_SIZE			2048
 #define MBUF_SIZE 			(BUF_SIZE + sizeof(struct rte_mbuf) + RTE_PKTMBUF_HEADROOM)
 #define NB_MBUF				8192
@@ -128,6 +102,25 @@ static const struct rte_eth_txconf tx_conf = {
 #define TX_PTHRESH 			36 /**< Default values of TX prefetch threshold reg. */
 #define TX_HTHRESH			0  /**< Default values of TX host threshold reg. */
 #define TX_WTHRESH			0  /**< Default values of TX write-back threshold reg. */
+
+static const struct rte_eth_rxconf rx_conf = {
+	.rx_thresh = {
+		.pthresh = 		RX_PTHRESH, /* RX prefetch threshold reg */
+		.hthresh = 		RX_HTHRESH, /* RX host threshold reg */
+		.wthresh = 		RX_WTHRESH, /* RX write-back threshold reg */
+	},
+	.rx_free_thresh = 		32,
+};
+
+static const struct rte_eth_txconf tx_conf = {
+	.tx_thresh = {
+		.pthresh = 		TX_PTHRESH, /* TX prefetch threshold reg */
+		.hthresh = 		TX_HTHRESH, /* TX host threshold reg */
+		.wthresh = 		TX_WTHRESH, /* TX write-back threshold reg */
+	},
+	.tx_free_thresh = 		0, /* Use PMD default values */
+	.tx_rs_thresh = 		0, /* Use PMD default values */
+};
 
 int
 start_port(portid_t pid)
