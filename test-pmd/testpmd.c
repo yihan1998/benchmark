@@ -158,11 +158,9 @@ start_port(portid_t pid)
 {
 	int ret;
 
-	struct rte_mempool * mp = rte_mempool_create("mempool",
-		MEMPOOL_SIZE,
-		MEMPOOL_ELT_SIZE,
-		0, 0,
-		NULL, 0, NULL, 0, rte_socket_id(), 0);
+	struct rte_mempool * mp = rte_pktmbuf_pool_create("test", RTE_TEST_RX_DESC_MAX +
+				DEF_MBUF_CACHE + RTE_TEST_TX_DESC_MAX + MAX_PKT_BURST,
+				DEF_MBUF_CACHE, 0, DEFAULT_MBUF_DATA_SIZE, rte_socket_id());
 
 	/* setting the rss key */
 	static uint8_t key[] = {
