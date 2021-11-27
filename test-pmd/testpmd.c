@@ -135,7 +135,7 @@ start_port(portid_t pid)
 	struct rte_mempool * mp = rte_mempool_create_empty("mp", nb_mbuf,
 				DEFAULT_MBUF_DATA_SIZE, (unsigned int) mb_mempool_cache,
 				sizeof(struct rte_pktmbuf_pool_private),
-				socket_id, mempool_flags);
+				rte_socket_id(), mempool_flags);
 
 	ret = rte_eth_dev_configure(pid, 1, 1, &port_conf);
 	if (ret < 0)
