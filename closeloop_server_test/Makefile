@@ -42,14 +42,14 @@ ifeq ($(NETMAP),1)
 LIBS += -lmtcp -lpthread -lnuma -lrt
 endif
 
-# dpdk-specific variables
-# ifeq ($(DPDK),1)
-# DPDK_MACHINE_LINKER_FLAGS=${RTE_SDK}/${RTE_TARGET}/lib/ldflags.txt
-# DPDK_MACHINE_LDFLAGS=$(shell cat ${DPDK_MACHINE_LINKER_FLAGS})
-# DPDK_INC = ${RTE_SDK}/${RTE_TARGET}/include
-# INC += -I../mtcp/io_engine/include -I${DPDK_INC} 
-# LIBS += -g -O3 -pthread -lrt -march=native ${MTCP_FLD}/lib/libmtcp.a -lnuma -lmtcp -lpthread -lrt -ldl -lgmp -L${RTE_SDK}/${RTE_TARGET}/lib ${DPDK_MACHINE_LDFLAGS}
-# endif
+dpdk-specific variables
+ifeq ($(DPDK),1)
+DPDK_MACHINE_LINKER_FLAGS=${RTE_SDK}/${RTE_TARGET}/lib/ldflags.txt
+DPDK_MACHINE_LDFLAGS=$(shell cat ${DPDK_MACHINE_LINKER_FLAGS})
+DPDK_INC = ${RTE_SDK}/${RTE_TARGET}/include
+INC += -I../mtcp/io_engine/include -I${DPDK_INC} 
+LIBS += -g -O3 -pthread -lrt -march=native ${MTCP_FLD}/lib/libmtcp.a -lnuma -lmtcp -lpthread -lrt -ldl -lgmp -L${RTE_SDK}/${RTE_TARGET}/lib ${DPDK_MACHINE_LDFLAGS}
+endif
 
 DPDK_INC = ${RTE_SDK}/${RTE_TARGET}/include
 INC += -I/home/yihan/mtcp/io_engine/include -I${DPDK_INC} 
