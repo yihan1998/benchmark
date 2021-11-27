@@ -156,7 +156,7 @@ endif
 
 CFLAGS		+= -O3 -g -fno-stack-protector -I/usr/include/
 
-LDFLAGS 	+= -L$(RUNTIME_DIR)/build -lcetus -L$(THREAD_DIR)/build -lmthread
+LDFLAGS 	+= 
 
 include $(RTE_SDK)/mk/rte.app.mk
 
