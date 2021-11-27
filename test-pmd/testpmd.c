@@ -121,6 +121,8 @@ static const struct rte_eth_txconf tx_conf = {
 	.tx_rs_thresh = 		0, /* Use PMD default values */
 };
 
+static struct rte_eth_dev_info dev_info;
+
 int
 start_port(portid_t pid)
 {
@@ -132,6 +134,8 @@ start_port(portid_t pid)
 		MEMPOOL_ELT_SIZE,
 		RTE_MEMPOOL_CACHE_MAX_SIZE, 0,
 		NULL, 0, NULL, 0, rte_socket_id(), 0);
+
+	rte_eth_dev_info_get(pid, &dev_info);
 
 	ret = rte_eth_dev_configure(pid, 1, 1, &port_conf);
 	if (ret < 0)
