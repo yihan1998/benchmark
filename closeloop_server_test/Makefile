@@ -60,7 +60,7 @@ server: server.cc
 	$(CC) $(CFLAGS) ${MTCP_FLD}/lib/libmtcp.a $^ $(INC) ${LIBS} ${UTIL_OBJ} -o $@ $(LDFLAGS) 
 
 clean:
-		rm -f *.o $(TARGETS)
+		rm -f *.o $(TARGET)
 
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright(c) 2010-2015 Intel Corporation
