@@ -87,11 +87,6 @@ main(int argc, char** argv)
 	signal(SIGINT, signal_handler);
 	signal(SIGTERM, signal_handler);
 
-	testpmd_logtype = rte_log_register("testpmd");
-	if (testpmd_logtype < 0)
-		rte_exit(EXIT_FAILURE, "Cannot register log type");
-	rte_log_set_level(testpmd_logtype, RTE_LOG_DEBUG);
-
 	diag = rte_eal_init(argc, argv);
 	if (diag < 0)
 		rte_exit(EXIT_FAILURE, "Cannot init EAL: %s\n",
