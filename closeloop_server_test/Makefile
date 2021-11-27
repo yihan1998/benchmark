@@ -33,7 +33,7 @@ LIBS = -g -O3 -pthread -lrt -march=native ${MTCP_FLD}/lib/libmtcp.a -lnuma -lmtc
 LIBDPDK_CFLAGS := $(shell pkg-config --cflags libdpdk)
 LIBDPDK_LDFLAGS := $(shell pkg-config --libs libdpdk)
 CFLAGS += $(LIBDPDK_CFLAGS)
-LIB += $(LIBDPDK_LDFLAGS)
+LIBS += $(LIBDPDK_LDFLAGS)
 
 ifeq ($V,) # no echo
 	export MSG=@echo
