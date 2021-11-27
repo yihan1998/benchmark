@@ -110,6 +110,25 @@ static const struct rte_eth_txconf tx_conf = {
 #define NB_MBUF				8192
 #define MEMPOOL_CACHE_SIZE		256
 
+/*
+ * RX and TX Prefetch, Host, and Write-back threshold values should be
+ * carefully set for optimal performance. Consult the network
+ * controller's datasheet and supporting DPDK documentation for guidance
+ * on how these parameters should be set.
+ */
+#define RX_PTHRESH 			8 /**< Default values of RX prefetch threshold reg. */
+#define RX_HTHRESH 			8 /**< Default values of RX host threshold reg. */
+#define RX_WTHRESH 			4 /**< Default values of RX write-back threshold reg. */
+
+/*
+ * These default values are optimized for use with the Intel(R) 82599 10 GbE
+ * Controller and the DPDK ixgbe PMD. Consider using other values for other
+ * network controllers and/or network drivers.
+ */
+#define TX_PTHRESH 			36 /**< Default values of TX prefetch threshold reg. */
+#define TX_HTHRESH			0  /**< Default values of TX host threshold reg. */
+#define TX_WTHRESH			0  /**< Default values of TX write-back threshold reg. */
+
 int
 start_port(portid_t pid)
 {
@@ -127,13 +146,13 @@ start_port(portid_t pid)
 	ret = rte_eth_dev_configure(pid, 1, 1, &port_conf);
 	if (ret < 0)
 		rte_exit(EXIT_FAILURE, "Cannot configure device: err=%d, port=%u, cores: %d\n",
-				ret, (unsigned) portid, CONFIG.num_cores);
+				ret, (unsigned) pid, 1);
 
 	ret = rte_eth_rx_queue_setup(pid, 0, 4096, rte_eth_dev_socket_id(pid), &rx_conf, mp);
 	if (ret < 0)
 		rte_exit(EXIT_FAILURE,
 				"rte_eth_rx_queue_setup:err=%d, port=%u, queueid: %d\n",
-				ret, (unsigned) pid, rxlcore_id);
+				ret, (unsigned) pid, 0);
 
 }
 
