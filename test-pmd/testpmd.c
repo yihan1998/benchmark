@@ -73,10 +73,6 @@ signal_handler(int signum)
 		/* uninitialize packet capture framework */
 		rte_pdump_uninit();
 #endif
-#ifdef RTE_LIBRTE_LATENCY_STATS
-		if (latencystats_enabled != 0)
-			rte_latencystats_uninit();
-#endif
 		/* exit with the expected status */
 		signal(signum, SIG_DFL);
 		kill(getpid(), signum);
