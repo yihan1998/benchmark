@@ -138,6 +138,16 @@ start_port(portid_t pid)
 	rte_eth_dev_info_get(pid, &dev_info);
 
 	ret = rte_eth_dev_configure(pid, 1, 1, &port_conf);
+#if RTE_VERSION >= RTE_VERSION_NUM(18, 5, 0, 0)
+	/* re-adjust rss_hf */
+	port_conf.rx_adv_conf.rss_conf.rss_hf &= dev_info.flow_type_rss_offloads;
+#endif
+	/* init port */
+	printf("Initializing port %u... ", (unsigned) pid);
+	fflush(stdout);
+	if (!strncmp(dev_info.driver_name, "net_mlx", 7))
+		port_conf.rx_adv_conf.rss_conf.rss_key_len = 40;
+
 	if (ret < 0)
 		rte_exit(EXIT_FAILURE, "Cannot configure device: err=%d, port=%u, cores: %d\n",
 				ret, (unsigned) pid, 1);
