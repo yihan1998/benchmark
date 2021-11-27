@@ -128,7 +128,7 @@ start_port(portid_t pid)
 	struct rte_eth_conf port_conf;
 	int ret;
 
-	struct rte_mempool * mp = rte_mempool_create("mempool", nb_mbuf,
+	struct rte_mempool * mp = rte_mempool_create("mempool", NB_MBUF,
 				MBUF_SIZE, MEMPOOL_CACHE_SIZE,
 				sizeof(struct rte_pktmbuf_pool_private),
 				rte_pktmbuf_pool_init, NULL,
