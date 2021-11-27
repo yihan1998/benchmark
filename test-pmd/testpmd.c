@@ -147,6 +147,7 @@ start_port(portid_t pid)
 				"rte_eth_rx_queue_setup:err=%d, port=%u, queueid: %d\n",
 				ret, (unsigned) pid, 0);
 
+	return ret;
 }
 
 int
@@ -162,7 +163,7 @@ main(int argc, char** argv)
 		rte_exit(EXIT_FAILURE, "Cannot init EAL: %s\n",
 			 rte_strerror(rte_errno));
 
-	if (start_port(RTE_PORT_ALL) != 0)
+	if (start_port(0) != 0)
 		rte_exit(EXIT_FAILURE, "Start ports failed\n");
 
 	return 0;
