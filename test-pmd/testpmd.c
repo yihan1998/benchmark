@@ -362,21 +362,6 @@ bool setup_on_probe_event = true;
 /* Clear ptypes on port initialization. */
 uint8_t clear_ptypes = true;
 
-/* Pretty printing of ethdev events */
-static const char * const eth_event_desc[] = {
-	[RTE_ETH_EVENT_UNKNOWN] = "unknown",
-	[RTE_ETH_EVENT_INTR_LSC] = "link state change",
-	[RTE_ETH_EVENT_QUEUE_STATE] = "queue state",
-	[RTE_ETH_EVENT_INTR_RESET] = "reset",
-	[RTE_ETH_EVENT_VF_MBOX] = "VF mbox",
-	[RTE_ETH_EVENT_IPSEC] = "IPsec",
-	[RTE_ETH_EVENT_MACSEC] = "MACsec",
-	[RTE_ETH_EVENT_INTR_RMV] = "device removal",
-	[RTE_ETH_EVENT_NEW] = "device probed",
-	[RTE_ETH_EVENT_DESTROY] = "device released",
-	[RTE_ETH_EVENT_MAX] = NULL,
-};
-
 /*
  * Display or mask ether events
  * Default to all events except VF_MBOX
@@ -471,13 +456,33 @@ uint8_t xstats_hide_zero;
 unsigned int num_sockets = 0;
 unsigned int socket_ids[RTE_MAX_NUMA_NODES];
 
+static void
+signal_handler(int signum)
+{
+	if (signum == SIGINT || signum == SIGTERM) {
+		printf("\nSignal %d received, preparing to exit...\n",
+				signum);
+#ifdef RTE_LIBRTE_PDUMP
+		/* uninitialize packet capture framework */
+		rte_pdump_uninit();
+#endif
+#ifdef RTE_LIBRTE_LATENCY_STATS
+		if (latencystats_enabled != 0)
+			rte_latencystats_uninit();
+#endif
+		force_quit();
+		/* Set flag to indicate the force termination. */
+		f_quit = 1;
+		/* exit with the expected status */
+		signal(signum, SIG_DFL);
+		kill(getpid(), signum);
+	}
+}
+
 int
 main(int argc, char** argv)
 {
 	int diag;
-	portid_t port_id;
-	uint16_t count;
-	int ret;
 
 	signal(SIGINT, signal_handler);
 	signal(SIGTERM, signal_handler);
