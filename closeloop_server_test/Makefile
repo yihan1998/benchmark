@@ -118,6 +118,10 @@ MTCP_INC    =-I${MTCP_FLD}/include -I${MTCP_FLD}/src/include
 MTCP_LIB    =-L${MTCP_FLD}/lib
 MTCP_TARGET = ${MTCP_LIB}/libmtcp.a
 
+UTIL_FLD = /home/yihan/mtcp/util
+UTIL_INC = -I${UTIL_FLD}/include
+UTIL_OBJ = ${UTIL_FLD}/http_parsing.o ${UTIL_FLD}/tdate_parse.o ${UTIL_FLD}/netlib.o
+
 SRCS-y := server.cc
 
 ifeq ($(CONFIG_RTE_BUILD_SHARED_LIB),y)
@@ -150,9 +154,9 @@ endif
 
 endif
 
-CFLAGS		+= -O3 -g -fno-stack-protector -I/usr/include/ -I./include/ -I/home/yihan/mtcp/io_engine/include -I${MTCP_FLD}/include -I${MTCP_FLD}/src/include
+CFLAGS		+= -O3 -g -fno-stack-protector -I/usr/include/ -I./include/ -I/home/yihan/mtcp/io_engine/include ${MTCP_INC} ${UTIL_INC}
 
-LDFLAGS 	+= -L/home/yihan/mtcp/mtcp/lib -l:libmtcp.a
+LDFLAGS 	+= -L/home/yihan/mtcp/mtcp/lib -l:libmtcp.a ${UTIL_OBJ}
 
 include $(RTE_SDK)/mk/rte.app.mk
 

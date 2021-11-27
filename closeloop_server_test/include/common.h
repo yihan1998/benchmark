@@ -22,6 +22,8 @@
 #include <mtcp_epoll.h>
 #include "cpu.h"
 #include "rss.h"
+#include "http_parsing.h"
+#include "netlib.h"
 #include "debug.h"
 
 #include "sizes.h"
