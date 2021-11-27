@@ -123,10 +123,39 @@ static const struct rte_eth_txconf tx_conf = {
 
 static struct rte_eth_dev_info dev_info;
 
+static struct rte_eth_conf port_conf = {
+	.rxmode = {
+		.mq_mode	= 	ETH_MQ_RX_RSS,
+		.max_rx_pkt_len = 	RTE_ETHER_MAX_LEN,
+		.offloads	=	(
+					 DEV_RX_OFFLOAD_CHECKSUM
+#ifdef ENABLELRO
+					 | DEV_RX_OFFLOAD_TCP_LRO
+#endif
+					 ),
+		.split_hdr_size = 	0,
+#ifdef ENABLELRO
+		.enable_lro	=	1, /**< Enable LRO */
+#endif
+	},
+	.rx_adv_conf = {
+		.rss_conf = {
+			.rss_key = 	NULL,
+			.rss_hf = 	ETH_RSS_TCP | ETH_RSS_UDP |
+					ETH_RSS_IP | ETH_RSS_L2_PAYLOAD
+		},
+	},
+	.txmode = {
+		.mq_mode = 		ETH_MQ_TX_NONE,
+		.offloads	=	(DEV_TX_OFFLOAD_IPV4_CKSUM |
+					 DEV_TX_OFFLOAD_UDP_CKSUM |
+					 DEV_TX_OFFLOAD_TCP_CKSUM)
+	},
+};
+
 int
 start_port(portid_t pid)
 {
-	struct rte_eth_conf port_conf;
 	int ret;
 
 	struct rte_mempool * mp = rte_mempool_create("mempool",
