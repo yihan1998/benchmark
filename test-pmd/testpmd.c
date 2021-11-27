@@ -131,7 +131,7 @@ start_port(portid_t pid)
 		MEMPOOL_SIZE,
 		MEMPOOL_ELT_SIZE,
 		RTE_MEMPOOL_CACHE_MAX_SIZE, 0,
-		0, NULL, 0, rte_socket_id(),0);
+		NULL, 0, NULL, 0, rte_socket_id(), 0);
 
 	ret = rte_eth_dev_configure(pid, 1, 1, &port_conf);
 	if (ret < 0)
