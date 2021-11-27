@@ -1,7 +1,7 @@
 # RTE_SDK=/home/yihan/mtcp/dpdk
 # RTE_TARGET=x86_64-native-linuxapp-gcc
 
-TARGETS = server client
+TARGETS = server
 CC		= g++
 DPDK	= 1
 PS		= 0
@@ -54,10 +54,9 @@ ifeq ($(RTT),1)
 CFLAGS += -DEVAL_RTT
 endif
 
-server: server.cc 
-	$(CC) $(CFLAGS) ${MTCP_FLD}/lib/libmtcp.a $^ $(INC) ${LIBS} ${UTIL_OBJ} -o $@ $(LDFLAGS) 
+all: $(TARGET)
 
-client: client.cc 
+server: server.cc 
 	$(CC) $(CFLAGS) ${MTCP_FLD}/lib/libmtcp.a $^ $(INC) ${LIBS} ${UTIL_OBJ} -o $@ $(LDFLAGS) 
 
 clean:
