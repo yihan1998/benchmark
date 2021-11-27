@@ -79,10 +79,9 @@ signal_handler(int signum)
 	}
 }
 
-#define BUF_SIZE			2048
-#define MBUF_SIZE 			(BUF_SIZE + sizeof(struct rte_mbuf) + RTE_PKTMBUF_HEADROOM)
-#define NB_MBUF				8192
-#define MEMPOOL_CACHE_SIZE		256
+#define MEMPOOL_ELT_SIZE 2048
+#define MAX_KEEP 16
+#define MEMPOOL_SIZE ((rte_lcore_count()*(MAX_KEEP+RTE_MEMPOOL_CACHE_MAX_SIZE))-1)
 
 /*
  * RX and TX Prefetch, Host, and Write-back threshold values should be
