@@ -176,12 +176,14 @@ start_port(portid_t pid)
 
 	port_conf.rx_adv_conf.rss_conf.rss_key = (uint8_t *)key;
 	port_conf.rx_adv_conf.rss_conf.rss_key_len = sizeof(key);
-	
+
 	rte_eth_dev_info_get(pid, &dev_info);
 
-	ret = rte_eth_dev_configure(pid, 1, 1, &port_conf);
 	/* re-adjust rss_hf */
 	port_conf.rx_adv_conf.rss_conf.rss_hf &= dev_info.flow_type_rss_offloads;
+
+	ret = rte_eth_dev_configure(pid, 1, 1, &port_conf);
+	
 	/* init port */
 	printf("Initializing port %u... ", (unsigned) pid);
 	fflush(stdout);
