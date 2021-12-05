@@ -58,9 +58,7 @@ do
                                                         --config_path=$cygnus_path/test/config \
                                                         --buff_size=$buff_size \
                                                         --time=$test_time \
-                                                        --num_server_cores=$num_server_cores
-                                                        #--port_range=$port_range
-
+                                                        --num_server_cores=$num_server_cores &
     pid=$!
 
     wait $pid

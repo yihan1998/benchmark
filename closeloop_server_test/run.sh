@@ -47,7 +47,6 @@ do
                                                         --test_time=$test_time \
                                                         --config_path=$cygnus_path/test/config \
                                                         --buff_size=$buff_size &
-
     pid=$!
 
     wait $pid
