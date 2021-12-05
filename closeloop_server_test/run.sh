@@ -37,9 +37,9 @@ do
 
     echo "Testing RTT for $num_connection connections on $num_cores cores..."
 
-    LD_LIBRARY_PATH=$lib_path ./$cygnus_path/Lyra/lyra
+    LD_LIBRARY_PATH=$lib_path $cygnus_path/Lyra/lyra
 
-    sleep 1
+    sleep 2
     
     LD_LIBRARY_PATH=$lib_path ./closeloop_server_test   --num_cores=$num_cores \
                                                         --test_time=$test_time \
