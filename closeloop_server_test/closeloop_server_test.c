@@ -1,11 +1,13 @@
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdint.h>
 #include <string.h>
+#include <sched.h>
 
-#include "cetus.h"
-#include "cetus_api.h"
+#include "cygnus.h"
+#include "cygnus_api.h"
 
 #include "mthread.h"
 
@@ -41,14 +43,14 @@ DEFINE_PER_LCORE(int, timerfd);
 DEFINE_PER_LCORE(int, wait_timerfd);
 
 DEFINE_PER_LCORE(int, epfd);
-DEFINE_PER_LCORE(struct cetus_epoll_event *, events);
+DEFINE_PER_LCORE(struct cygnus_epoll_event *, events);
 
 int handle_write_event(struct conn_info * conn_info) {
     if (conn_info->send_bytes == conn_info->recv_bytes) {
         return 0;
     }
 
-    int len = cetus_write(conn_info->sockfd, conn_info->buff + conn_info->recv_ptr, MIN(buff_size, conn_info->recv_bytes - conn_info->send_bytes));
+    int len = cygnus_write(conn_info->sockfd, conn_info->buff + conn_info->recv_ptr, MIN(buff_size, conn_info->recv_bytes - conn_info->send_bytes));
     
     if (len < 0) {
         return -1;
@@ -65,7 +67,7 @@ int handle_write_event(struct conn_info * conn_info) {
     fclose(fp);
     #endif
     
-    //logging(DEBUG, " [%s on core %d] send len: %d, send msg: %.*s", \
+    // logging(DEBUG, " [%s on core %d] send len: %d, send msg: %.*s", \
             __func__, lcore_id, len, len, conn_info->buff + conn_info->recv_ptr);
 
     conn_info->send_bytes += len;
@@ -75,7 +77,7 @@ int handle_write_event(struct conn_info * conn_info) {
 
 int handle_read_event(struct conn_info * conn_info) {
     char buff[BUFF_SIZE];
-    int recv_len = cetus_read(conn_info->sockfd, buff, buff_size);
+    int recv_len = cygnus_read(conn_info->sockfd, buff, buff_size);
         
     if (recv_len < 0) {
         return -1;
@@ -85,7 +87,7 @@ int handle_read_event(struct conn_info * conn_info) {
     
     // logging(DEBUG, " >> recv len: %d, recv msg: %.*s", recv_len, recv_len, buff);
 
-    int send_len = cetus_write(conn_info->sockfd, buff, recv_len);
+    int send_len = cygnus_write(conn_info->sockfd, buff, recv_len);
     
     if (send_len < 0) {
         return -1;
@@ -114,29 +116,29 @@ int parse_command_line(int argc, const char ** argv) {
 }
 
 void * server_thread(void * arg) {
-    struct cetus_param * param = (struct cetus_param *)arg;
+    struct cygnus_param * param = (struct cygnus_param *)arg;
 
     parse_command_line(param->argc, param->argv);
 
     logging(INFO, " [%s on core %d] testing server on %d cores!", __func__, param->core_id, param->num_cores);
 
-    epfd = cetus_epoll_create(0);
+    epfd = cygnus_epoll_create(0);
     if (epfd == -1) {
-        logging(ERROR, " [%s on core %d] cetus_epoll_create failed!", __func__, lcore_id);
+        logging(ERROR, " [%s on core %d] cygnus_epoll_create failed!", __func__, lcore_id);
     } else {
         logging(INFO, " [%s on core %d] create epoll fd: %d", __func__, lcore_id, epfd);
     }
 
-    int sock = cetus_socket(AF_INET, SOCK_STREAM, 0);
+    int sock = cygnus_socket(AF_INET, SOCK_STREAM, 0);
     if (sock == -1) {
-        logging(ERROR, "cetus_socket() failed!");
+        logging(ERROR, "cygnus_socket() failed!");
         exit(EXIT_FAILURE);
     } else {
         logging(INFO, " [%s on core %d] create socket fd: %d", __func__, lcore_id, sock);
     }
 
-    if (cetus_fcntl(sock, F_SETFL, O_NONBLOCK) == -1) {
-        logging(ERROR, "cetus_fcntl() set sock to non-block failed!");
+    if (cygnus_fcntl(sock, F_SETFL, O_NONBLOCK) == -1) {
+        logging(ERROR, "cygnus_fcntl() set sock to non-block failed!");
         exit(EXIT_FAILURE);
     }
 
@@ -146,39 +148,41 @@ void * server_thread(void * arg) {
     addr.sin_addr.s_addr = INADDR_ANY;
 
 #ifndef RSS_IN_USE
-    uint16_t port = lcore_id << 8;
+    uint16_t port = (lcore_id - 1) << 12;
 #else
     uint16_t port = 1234;
 #endif
 
     addr.sin_port = htons(port);
 
-    if ((ret = cetus_bind(sock, (struct sockaddr *)&addr, sizeof(addr))) == -1) {
-        logging(ERROR, "cetus_bind() failed!");
+    if ((ret = cygnus_bind(sock, (struct sockaddr *)&addr, sizeof(addr))) == -1) {
+        logging(ERROR, "cygnus_bind() failed!");
         exit(EXIT_FAILURE);
     } else {
         logging(INFO, " [%s on core %d] bind to port %u", __func__, lcore_id, port);
     }
 
-    if((ret = cetus_listen(sock, 1024)) == -1) {
-        logging(ERROR, "cetus_listen() failed!");
+    cygnus_create_flow(0, 0, 0, 0, 0, 0, port, 0xffff);
+
+    if((ret = cygnus_listen(sock, 1024)) == -1) {
+        logging(ERROR, "cygnus_listen() failed!");
         exit(EXIT_FAILURE);
     } else {
         logging(INFO, " [%s on core %d] listen to port %u", __func__, lcore_id, port);
     }
 
-    struct cetus_epoll_event ev;
-    ev.events = CETUS_EPOLLIN;
+    struct cygnus_epoll_event ev;
+    ev.events = CYGNUS_EPOLLIN;
     ev.data.fd = sock;
 
-    if ((ret = cetus_epoll_ctl(epfd, CETUS_EPOLL_CTL_ADD, sock, &ev)) == -1) {
-        logging(ERROR, "cetus_epoll_ctl() failed!");
+    if ((ret = cygnus_epoll_ctl(epfd, CYGNUS_EPOLL_CTL_ADD, sock, &ev)) == -1) {
+        logging(ERROR, "cygnus_epoll_ctl() failed!");
         exit(EXIT_FAILURE);
     }
 
-    int wait_timerfd = cetus_timerfd_create(CLOCK_MONOTONIC, CETUS_TFD_NONBLOCK);
+    int wait_timerfd = cygnus_timerfd_create(CLOCK_MONOTONIC, CYGNUS_TFD_NONBLOCK);
     if (wait_timerfd == -1) {
-        logging(ERROR, " [%s on core %d] cetus_timerfd_create wait timerfd failed!", __func__, lcore_id);
+        logging(ERROR, " [%s on core %d] cygnus_timerfd_create wait timerfd failed!", __func__, lcore_id);
     } else {
         logging(INFO, " [%s on core %d] create wait timer fd: %d", __func__, lcore_id, timerfd);
     }
@@ -189,15 +193,15 @@ void * server_thread(void * arg) {
 	ts.it_value.tv_sec = param->test_time;
 	ts.it_value.tv_nsec = 0;
 
-	if (cetus_timerfd_settime(wait_timerfd, 0, &ts, NULL) < 0) {
-		logging(ERROR, "cetus_timerfd_settime() failed");
+	if (cygnus_timerfd_settime(wait_timerfd, 0, &ts, NULL) < 0) {
+		logging(ERROR, "cygnus_timerfd_settime() failed");
         exit(EXIT_FAILURE);
 	}
 
-    ev.events = CETUS_EPOLLIN;
+    ev.events = CYGNUS_EPOLLIN;
     ev.data.fd = wait_timerfd;
-    if (ret = (cetus_epoll_ctl(epfd, CETUS_EPOLL_CTL_ADD, wait_timerfd, &ev)) == -1) {
-        logging(ERROR, " >> cetus_epoll_ctl() error on listen sock");
+    if (ret = (cygnus_epoll_ctl(epfd, CYGNUS_EPOLL_CTL_ADD, wait_timerfd, &ev)) == -1) {
+        logging(ERROR, " >> cygnus_epoll_ctl() error on listen sock");
         exit(EXIT_FAILURE);
     }
 
@@ -226,9 +230,9 @@ void * server_thread(void * arg) {
         //struct timeval wait_start;
         //gettimeofday(&wait_start, NULL);
 
-        nevent = cetus_epoll_wait(epfd, events, NR_CETUS_EPOLL_EVENTS, -1);
+        nevent = cygnus_epoll_wait(epfd, events, NR_CYGNUS_EPOLL_EVENTS, -1);
         if (nevent == -1) {
-            logging(ERROR, " >> cetus_epoll_wait return %d events!", nevent);
+            logging(ERROR, " >> cygnus_epoll_wait return %d events!", nevent);
             exit(EXIT_FAILURE);
         }
 
@@ -287,13 +291,13 @@ void * server_thread(void * arg) {
                 socklen_t len = sizeof(client);
                 
                 int new_sock;
-                new_sock = cetus_accept(sock, (struct sockaddr *)&client, &len);
+                new_sock = cygnus_accept(sock, (struct sockaddr *)&client, &len);
 
                 if(new_sock > 0) {
                     //logging(DEBUG, " [%s on core %d] accept connection, create socket %d", __func__, lcore_id, new_sock);
 
-                    if (cetus_fcntl(new_sock, F_SETFL, O_NONBLOCK) == -1) {
-                        logging(ERROR, "cetus_fcntl() set sock to non-block failed!");
+                    if (cygnus_fcntl(new_sock, F_SETFL, O_NONBLOCK) == -1) {
+                        logging(ERROR, "cygnus_fcntl() set sock to non-block failed!");
                         exit(EXIT_FAILURE);
                     }
 
@@ -307,12 +311,12 @@ void * server_thread(void * arg) {
 
                     num_conn++;
 
-                    struct cetus_epoll_event ev;
-                    ev.events = CETUS_EPOLLIN;
+                    struct cygnus_epoll_event ev;
+                    ev.events = CYGNUS_EPOLLIN;
                     ev.data.ptr = conn_info;
                     
-                    if (ret = (cetus_epoll_ctl(epfd, CETUS_EPOLL_CTL_ADD, new_sock, &ev)) == -1) {
-                        logging(ERROR, " >> cetus_epoll_ctl() error on accept soc");
+                    if (ret = (cygnus_epoll_ctl(epfd, CYGNUS_EPOLL_CTL_ADD, new_sock, &ev)) == -1) {
+                        logging(ERROR, " >> cygnus_epoll_ctl() error on accept soc");
                         exit(EXIT_FAILURE);
                     }
                 }/* else {
@@ -323,9 +327,9 @@ void * server_thread(void * arg) {
                     gettimeofday(&start, NULL);
                     start_flag = 1;
 
-                    timerfd = cetus_timerfd_create(CLOCK_MONOTONIC, CETUS_TFD_NONBLOCK);
+                    timerfd = cygnus_timerfd_create(CLOCK_MONOTONIC, CYGNUS_TFD_NONBLOCK);
                     if (timerfd == -1) {
-                        logging(ERROR, " [%s on core %d] cetus_timerfd_create failed!", __func__, lcore_id);
+                        logging(ERROR, " [%s on core %d] cygnus_timerfd_create failed!", __func__, lcore_id);
                     } else {
                         logging(INFO, " [%s on core %d] create timer fd: %d", __func__, lcore_id, timerfd);
                     }
@@ -336,15 +340,15 @@ void * server_thread(void * arg) {
                 	ts.it_value.tv_sec = param->test_time;
                 	ts.it_value.tv_nsec = 0;
 
-                	if (cetus_timerfd_settime(timerfd, 0, &ts, NULL) < 0) {
-                		logging(ERROR, "cetus_timerfd_settime() failed");
+                	if (cygnus_timerfd_settime(timerfd, 0, &ts, NULL) < 0) {
+                		logging(ERROR, "cygnus_timerfd_settime() failed");
                         exit(EXIT_FAILURE);
 	                }
 
-                    ev.events = CETUS_EPOLLIN;
+                    ev.events = CYGNUS_EPOLLIN;
                     ev.data.fd = timerfd;
-                    if (ret = (cetus_epoll_ctl(epfd, CETUS_EPOLL_CTL_ADD, timerfd, &ev)) == -1) {
-                        logging(ERROR, " >> cetus_epoll_ctl() error on listen sock");
+                    if (ret = (cygnus_epoll_ctl(epfd, CYGNUS_EPOLL_CTL_ADD, timerfd, &ev)) == -1) {
+                        logging(ERROR, " >> cygnus_epoll_ctl() error on listen sock");
                         exit(EXIT_FAILURE);
                     }
                 }
@@ -353,12 +357,12 @@ void * server_thread(void * arg) {
             }
 
             struct conn_info * info = (struct conn_info *)(events[i].data.ptr);
-            if (events[i].events == CETUS_EPOLLIN) {
+            if (events[i].events == CYGNUS_EPOLLIN) {
                 handle_read_event(info);
-            }/* else if (events[i].events == CETUS_EPOLLOUT) {
+            }/* else if (events[i].events == CYGNUS_EPOLLOUT) {
                 handle_write_event(info);
-            }*/ else if (events[i].events == CETUS_EPOLLERR) {
-                cetus_close(info->sockfd);
+            }*/ else if (events[i].events == CYGNUS_EPOLLERR) {
+                cygnus_close(info->sockfd);
             }
 
         }
@@ -375,8 +379,8 @@ void * server_thread(void * arg) {
     return NULL;
 }
 
-int test_net(void * arg) {
-    cetus_init((struct cetus_param *)arg);
+void * test_net(void * arg) {
+    cygnus_init((struct cygnus_param *)arg);
 
     int ret;
     mthread_t mid;
@@ -389,7 +393,7 @@ int test_net(void * arg) {
     //     info[i].buff = (char *)calloc(1, BUFF_SIZE);
     // }
     
-    events = (struct cetus_epoll_event *)calloc(NR_CETUS_EPOLL_EVENTS, CETUS_EPOLL_EVENT_SIZE);
+    events = (struct cygnus_epoll_event *)calloc(NR_CYGNUS_EPOLL_EVENTS, CYGNUS_EPOLL_EVENT_SIZE);
     
     sail_init();
     
@@ -443,12 +447,17 @@ int test_net(void * arg) {
     fprintf(thp_file, " ====================\n");
 	
 	fclose(thp_file);
+
+    return NULL;
 }
 
 int main(int argc, char ** argv) {
-    struct cetus_param * param = cetus_config(argc, argv);
+    struct cygnus_param * param = cygnus_config(argc, argv);
 
-    cetus_spawn(test_net, param);
+    cygnus_spawn(test_net, param);
+    // config.io_config.io_module->init_module(&config.io_config);
+
+    // start_core(test_net, param);
 
     logging(DEBUG, " [%s on core %d] test finished, return from main", __func__, lcore_id);
 
