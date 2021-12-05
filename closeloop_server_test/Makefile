@@ -1,44 +1,18 @@
-# #export RTE_SDK=/home/samaritan/Github/sail/dpdk
-# export RTE_SDK=/home/yihan-18/cetus/dpdk
-# export RTE_TARGET=x86_64-native-linuxapp-gcc
-
-# include $(RTE_SDK)/mk/rte.vars.mk
-
-# # binary name
-# APP 		=  closeloop_server_test
-
-# #SRC_DIR		:= /home/samaritan/Github/sail
-# SRC_DIR		:= /home/yihan-18/nus-sys/cetus
-
-# RUNTIME_DIR	= $(SRC_DIR)/Cetus
-# THREAD_DIR	:= $(SRC_DIR)/mthread
-
-# SRCS-y		:= 	closeloop_server_test.c
-
-# CFLAGS		+= -O3 -g -fno-stack-protector
-# CFLAGS		+= -I/usr/include/ -I$(RUNTIME_DIR)/include/ -I$(THREAD_DIR)/include/
-
-# LDFLAGS 	+= -L/usr/lib -L$(RUNTIME_DIR)/build -lcetus -L$(THREAD_DIR)/build -lmthread
-
-# ASFLAGS 	+= -f elf64 -O0
-
-# include $(RTE_SDK)/mk/rte.app.mk
-
 CC = gcc
 
-CFLAGS 		:= -O3 -g -fno-stack-protector -fPIC
+CFLAGS 		:= -O3 -g -fno-stack-protector -fPIC -msse4.1 -mavx -mavx512f
 
-SRC_DIR		:= /home/yihan-18/nus-sys/cetus
+SRC_DIR		:= /home/yihan/cygnus
 
-RUNTIME_DIR	= $(SRC_DIR)/Cetus
+RUNTIME_DIR	= $(SRC_DIR)/Cygnus
 THREAD_DIR	= $(SRC_DIR)/mthread
 
 LIBPATH 	:= -I/usr/include/ -I$(RUNTIME_DIR)/include/ -I$(THREAD_DIR)/include/
 CFLAGS 		+= $(LIBPATH)
 
-TARGET		:= closeloop_server_test
+TARGET		:= closeloop_client_test
 
-LDFLAGS 	:= -L/usr/lib -L$(THREAD_DIR) -lmthread -L$(RUNTIME_DIR) -lcetus
+LDFLAGS 	:= -L/usr/lib -L$(THREAD_DIR) -lmthread -L$(RUNTIME_DIR) -lcygnus
 
 # DPDK
 LIBDPDK_CFLAGS := $(shell pkg-config --cflags libdpdk)
@@ -50,7 +24,7 @@ all: $(TARGET)
 
 C_STANDARD	:= -std=gnu11
 
-C_SRC	:= closeloop_server_test.c
+C_SRC	:= closeloop_client_test.c
 
 OBJECTS := $(C_SRC:.c=.o)
 
