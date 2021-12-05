@@ -50,6 +50,10 @@ do
     
     echo "Test done"
 
+    pkill -9 lyra
+
+    wait
+
     sleep 2 
 
     wait
