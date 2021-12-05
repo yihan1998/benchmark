@@ -43,7 +43,7 @@ do
     
     LD_LIBRARY_PATH=$lib_path ./closeloop_server_test   --num_cores=$num_cores \
                                                         --test_time=$test_time \
-                                                        --config_path=$cetus_path/test/config \
+                                                        --config_path=$cygnus_path/test/config \
                                                         --buff_size=$buff_size
 
     wait
