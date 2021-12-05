@@ -22,7 +22,7 @@ make clean && make server
 
 rm throughput_*.txt
 
-for j in $(seq 0 10)
+for j in $(seq 0 15)
 do
     num_connection=`echo "2^$j" | bc `
 
