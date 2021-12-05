@@ -1,6 +1,6 @@
 CC = gcc
 
-CFLAGS 		:= -O3 -g -fno-stack-protector -fPIC -msse4.1 -mavx -mavx512f
+CFLAGS 		:= -O3 -g -fno-stack-protector -fno-omit-frame-pointer -fPIC -msse4.1 -mavx -mavx512f
 
 SRC_DIR		:= /home/yihan/cygnus
 
@@ -10,7 +10,7 @@ THREAD_DIR	= $(SRC_DIR)/mthread
 LIBPATH 	:= -I/usr/include/ -I$(RUNTIME_DIR)/include/ -I$(THREAD_DIR)/include/
 CFLAGS 		+= $(LIBPATH)
 
-TARGET		:= closeloop_client_test
+TARGET		:= closeloop_server_test
 
 LDFLAGS 	:= -L/usr/lib -L$(THREAD_DIR) -lmthread -L$(RUNTIME_DIR) -lcygnus
 
@@ -24,7 +24,7 @@ all: $(TARGET)
 
 C_STANDARD	:= -std=gnu11
 
-C_SRC	:= closeloop_client_test.c
+C_SRC	:= closeloop_server_test.c
 
 OBJECTS := $(C_SRC:.c=.o)
 
