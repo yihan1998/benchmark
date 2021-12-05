@@ -61,7 +61,9 @@ do
                                                         --num_server_cores=$num_server_cores
                                                         #--port_range=$port_range
 
-    wait
+    pid=$!
+
+    wait pid
     
     echo "Test done"
 

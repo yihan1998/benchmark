@@ -39,18 +39,24 @@ do
 
     LD_LIBRARY_PATH=$lib_path $cygnus_path/Lyra/lyra &
 
+    # insmod $cygnus_path/sail.ko
+
     sleep 2
     
     LD_LIBRARY_PATH=$lib_path ./closeloop_server_test   --num_cores=$num_cores \
                                                         --test_time=$test_time \
                                                         --config_path=$cygnus_path/test/config \
-                                                        --buff_size=$buff_size
+                                                        --buff_size=$buff_size &
 
-    wait
+    pid=$!
+
+    wait pid
     
     echo "Test done"
 
     pkill -9 lyra
+
+    # rmmod sail
 
     wait
 
