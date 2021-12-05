@@ -3,7 +3,7 @@ echo " -------------------------------------------------- "
 echo -e " \t Test script for closeloop server "
 echo " -------------------------------------------------- "
 
-echo -n "Number of CPU cores[1 - 4, 1 by default]: "
+echo -n "Number of CPU cores[1 - 16, 1 by default]: "
 read num_cores
 default_cores=1
 num_cores="${num_cores:-$default_cores}"
@@ -22,20 +22,24 @@ make clean && make
 
 rm throughput_*.txt
 
-cetus_path=/home/yihan-18/nus-sys/cetus
+cygnus_path=/home/yihan/cygnus
 
-runtime_lib_path=$cetus_path/Cetus
-thread_lib_path=$cetus_path/mthread
+runtime_lib_path=$cygnus_path/Cygnus
+thread_lib_path=$cygnus_path/mthread
 
-hoard_lib_path=/home/yihan-18/Hoard/src
+hoard_lib_path=/home/yihan/Hoard/src
 
 lib_path=$runtime_lib_path:$thread_lib_path:$hoard_lib_path
 
-for j in $(seq 0 12)
+for j in $(seq 0 15)
 do
     num_connection=`echo "2^$j" | bc `
 
     echo "Testing RTT for $num_connection connections on $num_cores cores..."
+
+    LD_LIBRARY_PATH=$lib_path ./$(cygnus_path)/Lyra/lyra
+
+    sleep 1
     
     LD_LIBRARY_PATH=$lib_path ./closeloop_server_test   --num_cores=$num_cores \
                                                         --test_time=$test_time \

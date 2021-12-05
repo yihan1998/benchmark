@@ -19,16 +19,16 @@ make clean && make
 
 rm throughput_*.txt
 
-cetus_path=/home/yihan/nus-sys/cetus
+cygnus_path=/home/yihan/cygnus
 
-runtime_lib_path=$cetus_path/Cetus
-thread_lib_path=$cetus_path/mthread
+runtime_lib_path=$cygnus_path/Cygnus
+thread_lib_path=$cygnus_path/mthread
 
 hoard_lib_path=/home/yihan/Hoard/src
 
 lib_path=$runtime_lib_path:$thread_lib_path:$hoard_lib_path
 
-for j in $(seq 0 12)
+for j in $(seq 0 15)
 do
     total_conn=`echo "2^$j" | bc `
 
@@ -42,6 +42,10 @@ do
     num_flows=`expr $total_conn / $num_cores`
 
     echo "Testing RTT for $total_conn connections on $num_cores core(s), each have $num_flows connection(s) ..."
+
+    LD_LIBRARY_PATH=$lib_path ./$(cygnus_path)/Lyra/lyra
+
+    sleep 1
 
     LD_LIBRARY_PATH=$lib_path ./closeloop_client_test   --num_cores=$num_cores \
                                                         --num_flows=$num_flows \
