@@ -13,6 +13,11 @@ read buff_size
 default_size=1024
 buff_size="${buff_size:-$default_size}"
 
+echo -n "Number of cores on server side [1 by default]: "
+read num_server_cores
+default_num_server_cores=1
+num_server_cores="${num_server_cores:-$default_num_server_cores}"
+
 max_core=16
 
 make clean && make
@@ -51,7 +56,9 @@ do
                                                         --num_flows=$num_flows \
                                                         --test_time=$test_time \
                                                         --config_path=$cygnus_path/test/config \
-                                                        --buff_size=$buff_size
+                                                        --buff_size=$buff_size \
+                                                        --time=$test_time \
+                                                        --num_server_cores=$num_server_cores
                                                         #--port_range=$port_range
 
     wait
