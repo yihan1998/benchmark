@@ -50,7 +50,7 @@ do
 
     pid=$!
 
-    wait pid
+    wait $pid
     
     echo "Test done"
 
