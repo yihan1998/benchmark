@@ -37,9 +37,11 @@ do
 
     echo "Testing RTT for $num_connection connections on $num_cores cores..."
 
-    LD_LIBRARY_PATH=$lib_path $cygnus_path/Lyra/lyra &
+    insmod $cygnus_path/sail.ko 
 
-    # insmod $cygnus_path/sail.ko
+    sleep 1
+
+    LD_LIBRARY_PATH=$lib_path $cygnus_path/Lyra/lyra &
 
     sleep 2
     
@@ -55,7 +57,7 @@ do
 
     pkill -9 lyra
 
-    # rmmod sail
+    rmmod sail
 
     wait
 

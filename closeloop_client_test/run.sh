@@ -18,7 +18,7 @@ read num_server_cores
 default_num_server_cores=1
 num_server_cores="${num_server_cores:-$default_num_server_cores}"
 
-max_core=16
+max_core=8
 
 make clean && make
 
@@ -33,7 +33,7 @@ hoard_lib_path=/home/yihan/Hoard/src
 
 lib_path=$runtime_lib_path:$thread_lib_path:$hoard_lib_path
 
-for j in $(seq 0 15)
+for j in $(seq 0 14)
 do
     total_conn=`echo "2^$j" | bc `
 
@@ -47,6 +47,10 @@ do
     num_flows=`expr $total_conn / $num_cores`
 
     echo "Testing RTT for $total_conn connections on $num_cores core(s), each have $num_flows connection(s) ..."
+
+    insmod $cygnus_path/sail.ko 
+
+    sleep 1
 
     LD_LIBRARY_PATH=$lib_path $cygnus_path/Lyra/lyra &
 
@@ -68,6 +72,8 @@ do
     pkill -9 lyra
 
     wait
+
+    rmmod sail
 
     sleep 3
 
