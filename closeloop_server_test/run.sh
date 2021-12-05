@@ -31,13 +31,13 @@ hoard_lib_path=/home/yihan/Hoard/src
 
 lib_path=$runtime_lib_path:$thread_lib_path:$hoard_lib_path
 
-for j in $(seq 0 15)
+for j in $(seq 0 14)
 do
     num_connection=`echo "2^$j" | bc `
 
     echo "Testing RTT for $num_connection connections on $num_cores cores..."
 
-    insmod $cygnus_path/sail.ko 
+    insmod $cygnus_path/Sail/sail.ko 
 
     sleep 1
 

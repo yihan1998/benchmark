@@ -48,7 +48,7 @@ do
 
     echo "Testing RTT for $total_conn connections on $num_cores core(s), each have $num_flows connection(s) ..."
 
-    insmod $cygnus_path/sail.ko 
+    insmod $cygnus_path/Sail/sail.ko 
 
     sleep 1
 
