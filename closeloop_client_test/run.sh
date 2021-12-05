@@ -43,7 +43,7 @@ do
 
     echo "Testing RTT for $total_conn connections on $num_cores core(s), each have $num_flows connection(s) ..."
 
-    LD_LIBRARY_PATH=$lib_path $cygnus_path/Lyra/lyra
+    LD_LIBRARY_PATH=$lib_path $cygnus_path/Lyra/lyra &
 
     sleep 2
 

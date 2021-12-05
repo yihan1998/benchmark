@@ -37,7 +37,7 @@ do
 
     echo "Testing RTT for $num_connection connections on $num_cores cores..."
 
-    LD_LIBRARY_PATH=$lib_path $cygnus_path/Lyra/lyra
+    LD_LIBRARY_PATH=$lib_path $cygnus_path/Lyra/lyra &
 
     sleep 2
     
