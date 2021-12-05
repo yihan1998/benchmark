@@ -13,7 +13,7 @@ read buff_size
 default_size=1024
 buff_size="${buff_size:-$default_size}"
 
-max_core=4
+max_core=16
 
 make clean && make
 
