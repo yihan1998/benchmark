@@ -10,7 +10,7 @@ read buff_size
 
 #echo -n "number of CPU cores: "
 #read num_core
-max_cores=4
+max_cores=16
 
 echo -n "Total test time(s): "
 read test_time
