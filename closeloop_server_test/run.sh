@@ -39,7 +39,7 @@ do
 
     insmod $cygnus_path/Sail/sail.ko 
 
-    sleep 1
+    sleep 2
 
     LD_LIBRARY_PATH=$lib_path $cygnus_path/Lyra/lyra &
 
@@ -56,6 +56,10 @@ do
     echo "Test done"
 
     pkill -9 lyra
+
+    wait
+
+    sleep 1
 
     rmmod sail
 
