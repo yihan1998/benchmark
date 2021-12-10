@@ -414,7 +414,7 @@ int main(int argc, char * argv[]) {
     for (int i = 0; i < num_cores; i++) {
         thread_arg[i].core_id = i;
         thread_arg[i].ip_addr = server_ip;
-        thread_arg[i].port = server_port;
+        thread_arg[i].port = server_port + i % num_server_core;
         if (pthread_create(&thread[i], NULL, RunClientThread, (void *)&thread_arg[i]) != 0) {
             printf("pthread_create of server thread failed!\n");
             return 0;
