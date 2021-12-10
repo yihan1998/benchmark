@@ -1,6 +1,6 @@
 #!/bin/bash
 
-server_ip='10.0.1.1'
+server_ip='10.0.0.1'
 server_port=81
 
 echo -n "Buffer size(B): "
