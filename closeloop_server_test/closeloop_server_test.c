@@ -236,17 +236,6 @@ void * server_thread(void * arg) {
             exit(EXIT_FAILURE);
         }
 
-        //struct timeval wait_end;
-        //gettimeofday(&wait_end, NULL);
-
-        //long long start_time = TIMEVAL_TO_USEC(wait_start);
-        //long long end_time = TIMEVAL_TO_USEC(wait_end);
-        //logging(DEBUG, " >> start sec: %lu, usec: %lu", wait_start.tv_sec, wait_start.tv_usec);
-        //logging(DEBUG, " >> end sec: %lu, usec: %lu", wait_end.tv_sec, wait_end.tv_usec);
-        //logging(DEBUG, " >> epoll wait: %llu (us), nevent: %d", end_time - start_time, nevent);
-
-        //logging(INFO, " \t >> server receive %d events", nevent);
-
 #ifdef DEBUG_EPOLLWAIT
         gettimeofday(&epoll_wait_end, NULL);
 
@@ -280,6 +269,15 @@ void * server_thread(void * arg) {
             if (events[i].data.fd == timerfd) {
                 logging(INFO, " [%s on core %d] time's up! End test", __func__, lcore_id);
                 gettimeofday(&end, NULL);
+
+                long long start_time = TIMEVAL_TO_USEC(start);
+                long long end_time = TIMEVAL_TO_USEC(end);
+                double total_time = (end_time - start_time) / 1000000.00;
+
+                // for (int i = 0; i < num_conn; i++) {
+                //     logging(INFO, " \t Connection %d: recv thp: %.2f (Mbps), send thp: %.2f (Mbps)", i, info[i].recv_bytes * 8.0 / (total_time * 1000 * 1000), info[i].send_bytes * 8.0 / (total_time * 1000 * 1000));
+                // }
+                
                 return NULL;
             }
 
@@ -379,6 +377,18 @@ void * server_thread(void * arg) {
     return NULL;
 }
 
+void * test_server_thread(void * arg) {
+    struct timeval start, curr;
+    gettimeofday(&start, NULL);
+
+    do {
+        gettimeofday(&curr, NULL);
+        schedule();
+    } while (curr.tv_sec - start.tv_sec < 60);
+
+    return NULL;
+}
+
 void * test_net(void * arg) {
     cygnus_init((struct cygnus_param *)arg);
 
@@ -398,18 +408,20 @@ void * test_net(void * arg) {
     sail_init();
     
     /* Create polling thread */
-    if((ret = mthread_create(&mid, NULL, server_thread, arg)) < 0) {
-        printf("mthread_create() error: %d\n", ret);
-        exit(1);
-    } else {
-        logging(INFO, "[%s on core %d] server_thread create done(mid: %lu)", __func__, lcore_id, mid);
-    }
+    // if((ret = mthread_create(&mid, NULL, test_server_thread, arg)) < 0) {
+    //     printf("mthread_create() error: %d\n", ret);
+    //     exit(1);
+    // } else {
+    //     logging(INFO, "[%s on core %d] server_thread create done(mid: %lu)", __func__, lcore_id, mid);
+    // }
 
     /* Test mthread_join */
-    if ((ret = mthread_join(mid, NULL)) < 0) {
-        printf("mthread_join() error: %d\n", ret);
-        exit(1);
-    }
+    // if ((ret = mthread_join(mid, NULL)) < 0) {
+    //     printf("mthread_join() error: %d\n", ret);
+    //     exit(1);
+    // }
+
+    server_thread(arg);
 
     logging(INFO, "[%s on core %d] mthread %lu joined!", __func__, lcore_id, mid);
 
@@ -447,6 +459,51 @@ void * test_net(void * arg) {
     fprintf(thp_file, " ====================\n");
 	
 	fclose(thp_file);
+
+#ifdef TIMESTAMP
+    char * name = (char *)aligned_alloc(16, 32);
+
+	snprintf(name, 31, "overhead.txt", lcore_id);
+	FILE * fp = fopen(name, "a+");
+
+    char * overhead = (char *)aligned_alloc(16, 512);
+
+    for (int k = 0; k < ts_count; k++) {
+        // unsigned long long t[ts[k].count];
+        // for (int i = 0; i < ts[k].count; i++) {
+        //     // printf(" [%s] %llu sec, %llu usec\n", ts[k].func[i], ts[k].time[i].tv_sec, ts[k].time[i].tv_usec);
+        //     t[i] = TIMEVAL_TO_USEC(ts[k].time[i]);
+        // }
+
+        unsigned long long network_in = timeval_sub(&ts[k].time[1], &ts[k].time[0]);
+        unsigned long long network_out = timeval_sub(&ts[k].time[9], &ts[k].time[8]);
+        unsigned long long schedule = timeval_sub(&ts[k].time[3], &ts[k].time[2]) + timeval_sub(&ts[k].time[7], &ts[k].time[6]);
+        unsigned long long context_switch = timeval_sub(&ts[k].time[2], &ts[k].time[1]) + timeval_sub(&ts[k].time[4], &ts[k].time[3]) + timeval_sub(&ts[k].time[6], &ts[k].time[5]) + timeval_sub(&ts[k].time[8], &ts[k].time[7]);
+        unsigned long long application = timeval_sub(&ts[k].time[5], &ts[k].time[4]);
+        unsigned long long total = timeval_sub(&ts[k].time[9], &ts[k].time[0]);
+
+        // printf(" Packet %d total \t %5llu usec\n", k, total);
+        // printf(" \t Network(in) \t %5llu usec\n", network_in);
+        // printf(" \t Network(out) \t %5llu usec\n", network_out);
+        // printf(" \t Schedule \t %5llu usec\n", schedule);
+        // printf(" \t Context switch \t %5llu usec\n", context_switch);
+        // printf(" \t Application \t %5llu usec\n", application);
+        if (total > 20) {
+            for (int i = 0; i < ts[k].count; i++) {
+                printf(" [%s] %llu sec, %llu usec\n", ts[k].func[i], ts[k].time[i].tv_sec, ts[k].time[i].tv_usec);
+            }
+            printf(" Total : %llu us | Network(in) : %llu us | Network(out) : %llu us | Schedule : %llu us | ContextSwitch : %llu us | App : %llu us\n", \
+                        total, network_in, network_out, schedule, context_switch, application);
+        }
+
+        sprintf(overhead, " Total : %llu us | Network(in) : %llu us | Network(out) : %llu us | Schedule : %llu us | ContextSwitch : %llu us | App : %llu us\n", \
+                        total, network_in, network_out, schedule, context_switch, application);
+    
+        fwrite(overhead, 1, strlen(overhead), fp);
+    }
+
+	fclose(fp);
+#endif
 
     return NULL;
 }

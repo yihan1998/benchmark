@@ -15,7 +15,17 @@
 
 #define BUFF_SIZE   8192
 
-#define EVAL_RTT
+#ifdef TIMESTAMP_CLIENT
+__thread int ts_count;
+__thread char ts[1000][256];
+#endif
+
+#ifdef TIMESTAMP_SERVER
+__thread int ts_count;
+__thread char ts[1000][1024];
+#endif
+
+// #define EVAL_RTT
 
 #ifdef EVAL_RTT
 __thread long long * rtt_buff;
@@ -85,7 +95,7 @@ int connect_server(int epfd, char * server_ip, uint16_t port) {
         exit(EXIT_FAILURE);
     }
     
-    //logging(INFO, " [%s on core %d] sock %d connect server %s:%u", __func__, lcore_id, sock, server_ip, port);
+    // logging(INFO, " [%s on core %d] sock %d connect server %s:%u", __func__, lcore_id, sock, server_ip, port);
 
     struct conn_info * conn_info = &info[num_conn];
     conn_info->sockfd = sock;
@@ -120,18 +130,49 @@ int connect_server(int epfd, char * server_ip, uint16_t port) {
 }
 
 int handle_read_event(struct conn_info * conn_info) {
+#ifdef TIMESTAMP_CLIENT
+    char * buff;
+    char tmp_buff[buff_size];
+    if (ts_count < 1000) {
+        buff = &ts[ts_count];
+    } else {
+        buff = tmp_buff;
+    }
+#elif defined(TIMESTAMP_SERVER)
+    char * buff;
+    char tmp_buff[buff_size];
+    if (ts_count < 1000) {
+        buff = &ts[ts_count];
+    } else {
+        buff = tmp_buff;
+    }
+#else
+    char buff[buff_size];
+#endif
+
 #ifdef DEBUG_THP
     struct timeval curr;
     gettimeofday(&curr, NULL);
     logging(DEBUG, " [%s on core %d] sec: %lu, usec: %lu", __func__, lcore_id, curr.tv_sec, curr.tv_usec);
 #endif
-    char buff[buff_size];
 
     int len = cygnus_read(conn_info->sockfd, buff, buff_size);
     
     if (len < 0) {
         return -1;
     }
+
+#ifdef TIMESTAMP_CLIENT
+    if (ts_count < 1000 && strstr(buff, "MAGICNUMBER1234\n")) {
+        ts_count++;
+    }
+#endif  // TIMESTAMP_CLIENT
+
+#ifdef TIMESTAMP_SERVER
+    if (ts_count < 1000 && strstr(buff, "MAGICNUMBER1234\n")) {
+        ts_count++;
+    }
+#endif
 
     // logging(DEBUG, " [%s on core %d] recv len: %d, recv msg: %.*s", __func__, lcore_id, len, len, buff);
     // struct timeval curr;
@@ -193,11 +234,31 @@ int handle_write_event(struct conn_info * conn_info) {
     gettimeofday(&curr, NULL);
     logging(DEBUG, " [%s on core %d] sec: %lu, usec: %lu", __func__, lcore_id, curr.tv_sec, curr.tv_usec);
 #endif
+    char * s;
+#ifdef TIMESTAMP_CLIENT
+    char buff[buff_size];
+    memset(buff, 0, buff_size);
+    if (conn_info->sockfd == info[0].sockfd) {
+        char msg[] = "MAGICNUMBER1234\n";
+        memcpy(buff, msg, strlen(msg));
+    }
+    s = buff;
+#elif defined(TIMESTAMP_SERVER)
+    char buff[buff_size];
+    memset(buff, 0, buff_size);
+    if (conn_info->sockfd == info[0].sockfd && lcore_id == 1 && ts_count < 1000) {
+        char msg[] = "MAGICNUMBER1234\n";
+        memcpy(buff, msg, strlen(msg));
+    }
+    s = buff;
+#else 
     if (conn_info->input_file_ptr + buff_size >= M_128) {
         conn_info->input_file_ptr = 0;
     }
+    s = conn_info->input_file + conn_info->input_file_ptr;
+#endif  // TIMESTAMP_CLIENT
 
-    int len = cygnus_write(conn_info->sockfd, conn_info->input_file + conn_info->input_file_ptr, buff_size);
+    int len = cygnus_write(conn_info->sockfd, s, buff_size);
     
     if (len < 0) {
         return -1;
@@ -228,8 +289,11 @@ int handle_write_event(struct conn_info * conn_info) {
 
     //logging(DEBUG, " >> send len: %d, send msg: %.*s", len, len, conn_info->input_file + conn_info->input_file_ptr);
     //logging(DEBUG, " [%s on core %d] send data len: %d", __func__, lcore_id, len);
-    
+
+#ifndef TIMESTAMP_CLIENT
     conn_info->input_file_ptr += len;
+#endif  // TIMESTAMP_CLIENT
+
     conn_info->send_bytes += len;
 
     int ret;
@@ -314,6 +378,8 @@ void * client_thread(void * arg) {
 #endif
 
     char name[32];
+
+    logging(DEBUG, " [%s on core %d] creating flow ...", __func__, lcore_id);
 
     cygnus_create_flow(0, 0, 0, 0, port, 0xf000, (lcore_id - 1) << 12, 0xf000);
 
@@ -482,6 +548,90 @@ int test_net(void * arg) {
 
     fclose(rtt_file);
 #endif
+
+#ifdef TIMESTAMP_CLIENT
+    char * overhead_name = (char *)aligned_alloc(16, 32);
+
+	snprintf(overhead_name, 31, "overhead.txt", lcore_id);
+	FILE * overhead_fp = fopen(overhead_name, "a+");
+
+    char * overhead = (char *)aligned_alloc(16, 512);
+
+    for (int i = 0; i < ts_count; i++) {
+        int * count = (int *)(ts[i]);
+        struct timeval * tv = (struct timeval *)((char *)(ts[i]) + strlen("MAGICNUMBER1234\n") + sizeof(int));
+
+        unsigned long long network_out = timeval_sub(&tv[1], &tv[0]);
+        unsigned long long network_in = timeval_sub(&tv[3], &tv[2]);
+        unsigned long long in_flight = timeval_sub(&tv[2], &tv[1]);
+        unsigned long long total = timeval_sub(&tv[3], &tv[0]);
+
+        fprintf(stdout, " Packet %d total %llu us\n", i, total);
+        fprintf(stdout, " \t Network(out) %llu us\n", network_out);
+        fprintf(stdout, " \t InFlight %llu us\n", in_flight);
+        fprintf(stdout, " \t Network(in) %llu us\n", network_in);
+
+        sprintf(overhead, " Total : %llu us | Network(out) : %llu us | Inflight : %llu us | Network(in) : %llu us\n", \
+                        total, network_out, in_flight, network_in);
+
+        fwrite(overhead, 1, strlen(overhead), overhead_fp);
+    }
+
+	fclose(overhead_fp);
+#endif  // TIMESTAMP_CLIENT
+
+#ifdef TIMESTAMP_SERVER
+    char * overhead_name = (char *)aligned_alloc(16, 32);
+
+	snprintf(overhead_name, 31, "server_overhead_%d.txt", lcore_id);
+	FILE * overhead_fp = fopen(overhead_name, "a+");
+
+    char * overhead = (char *)aligned_alloc(16, 1024);
+
+    for (int i = 0; i < ts_count; i++) {
+        printf(" ============== Checking packet %d ==============\n", i);
+        int * count = (int *)(ts[i]);
+        struct timeval * tv = (struct timeval *)((char *)(ts[i]) + strlen("MAGICNUMBER1234\n") + sizeof(int));
+
+        // for (int i = 0; i < 12; i++) {
+        //     printf(" [tv %d] %llu sec, %llu usec\n", i, tv[i].tv_sec, tv[i].tv_usec);
+        // }
+
+        // unsigned long long network_out = t[1] - t[0];
+        // unsigned long long network_in = t[3] - t[2];
+        // unsigned long long in_flight = t[2] - t[1];
+        // unsigned long long total = t[3] - t[0];
+
+        // unsigned long long t[ts[k].count];
+        // for (int i = 0; i < ts[k].count; i++) {
+        //     // printf(" [%s] %llu sec, %llu usec\n", ts[k].func[i], ts[k].time[i].tv_sec, ts[k].time[i].tv_usec);
+        //     t[i] = TIMEVAL_TO_USEC(ts[k].time[i]);
+        // }
+
+        unsigned long long network_in = timeval_sub(&tv[2], &tv[1]);
+        unsigned long long network_out = timeval_sub(&tv[10], &tv[9]);
+        unsigned long long schedule = timeval_sub(&tv[4], &tv[3]) + timeval_sub(&tv[8], &tv[7]);
+        unsigned long long context_switch = timeval_sub(&tv[3], &tv[2]) + timeval_sub(&tv[5], &tv[4]) + timeval_sub(&tv[7], &tv[6]) + timeval_sub(&tv[9], &tv[8]);
+        unsigned long long application = timeval_sub(&tv[6], &tv[5]);
+        unsigned long long in_flight = timeval_sub(&tv[11], &tv[0]) - timeval_sub(&tv[10], &tv[1]);
+        unsigned long long total = timeval_sub(&tv[11], &tv[0]);
+
+        printf(" Packet %d total \t %5llu usec\n", i, total);
+        printf(" \t Network(in) \t %5llu usec\n", network_in);
+        printf(" \t Network(out) \t %5llu usec\n", network_out);
+        printf(" \t Schedule \t %5llu usec\n", schedule);
+        printf(" \t Context switch \t %5llu usec\n", context_switch);
+        printf(" \t Application \t %5llu usec\n", application);
+        printf(" \t In flight \t %5llu usec\n", in_flight);
+
+        sprintf(overhead, " Total : %llu us | Network(in) : %llu us | Network(out) : %llu us | Schedule : %llu us | ContextSwitch : %llu us | App : %llu us | Inflight : %llu us\n", \
+                        total, network_in, network_out, schedule, context_switch, application, in_flight);
+
+        fwrite(overhead, 1, strlen(overhead), overhead_fp);
+    }
+
+	fclose(overhead_fp);
+#endif  // TIMESTAMP_CLIENT
 }
 
 int main(int argc, char ** argv) {
