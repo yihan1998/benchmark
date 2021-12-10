@@ -11,7 +11,7 @@
 
 #include "sail.h"
 
-#define MAX_CONNECT 4100
+#define MAX_CONNECT 1200
 
 #define BUFF_SIZE   8192
 
