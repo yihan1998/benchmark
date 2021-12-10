@@ -137,7 +137,7 @@ void * server_thread(void * arg) {
     int server_port = core_id << 12;
     printf(" [%s] test tas: listening to port %x\n", __func__, server_port);
 #else
-    int server_port = port;
+    int server_port = args->port;
     printf(" [%s] test linux: listening to port %x\n", __func__, server_port);
 #endif
 
