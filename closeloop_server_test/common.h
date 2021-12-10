@@ -40,6 +40,7 @@
 struct thread_arg {
     int core_id;
     int thread_id;
+    int port;
 };
 
 //#define BUFF_SIZE   1024
