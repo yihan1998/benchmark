@@ -188,14 +188,12 @@ void * server_thread(void * arg) {
     int ret;
     ret = bind(sock, (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
     if(ret < 0) {
-        printf(" [%s] bind socket to port %d failed!\n", __func__, ntohs(addr.sin_port));
-        exit(1);
+        perror(" bind failed!");
     }
     
     ret = listen(sock, 1024);
     if(ret < 0) {
-        printf(" [%s] listen to socket failed!\n", __func__);
-        exit(1);
+        perror(" listen failed!");
     }
 
     /* Create epoll fd */
