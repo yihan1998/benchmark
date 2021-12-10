@@ -173,7 +173,9 @@ void * server_thread(void * arg) {
     //printf(" [%s] create sock %d\n", __func__, sock);
 
     int opt = 1;
-    setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(int)) < 0) {
+        perror("setsockopt(SO_REUSEADDR) failed");
+    }
 
     if (setnonblocking(sock) < 0) {
         perror("setnonblock error");
