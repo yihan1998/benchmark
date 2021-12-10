@@ -78,13 +78,13 @@ int connect_server(int epfd, char * server_ip, int port) {
     int rcv_size = 0;  
     socklen_t optlen; 
 
-    fprintf(stdout, " [%s] connecting to %s(%x)\n", __func__, server_ip, port);
+    // fprintf(stdout, " [%s] connecting to %s(%x)\n", __func__, server_ip, port);
 
     if(connect(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0){
         perror("[CLIENT] connect server failed");
         return -1;
     }
-    fprintf(stdout, " [%s] %s(%x) connected\n", __func__, server_ip, port);
+    // fprintf(stdout, " [%s] %s(%x) connected\n", __func__, server_ip, port);
 
     fcntl(sockfd, F_SETFL, O_NONBLOCK);
 
