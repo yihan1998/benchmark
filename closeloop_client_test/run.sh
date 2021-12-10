@@ -50,6 +50,7 @@ do
 
     ./client    --server_ip=$server_ip \
                 --server_port=$server_port \
+                --num_server_core=$num_server_core \
                 --size=$buff_size \
                 --time=$test_time \
                 --num_flow=$num_flow \
