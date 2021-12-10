@@ -6,7 +6,7 @@ server_port=81
 echo -n "Buffer size(B): "
 read buff_size
 
-max_cores=4
+max_cores=8
 
 echo -n "Total test time(s): "
 read test_time
