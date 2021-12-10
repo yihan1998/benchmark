@@ -12,7 +12,7 @@ CFLAGS 		+= $(LIBPATH)
 
 TARGET		:= closeloop_client_test
 
-LDFLAGS 	:= -L/usr/lib -L$(THREAD_DIR) -lmthread -L$(RUNTIME_DIR) -lcygnus
+LDFLAGS 	:= -L/usr/lib -L$(THREAD_DIR) -lmthread -L$(RUNTIME_DIR) -lcygnus -L/home/yihan/Hoard/src -lhoard
 
 # DPDK
 LIBDPDK_CFLAGS := $(shell pkg-config --cflags libdpdk)
