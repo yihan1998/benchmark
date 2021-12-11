@@ -47,6 +47,8 @@ do
                     --time=$test_time \
                     --port=$port \
                     --num_cores=$num_cores 
+    
+    wait
 
     echo "Test done"
 
