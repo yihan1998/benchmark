@@ -1,7 +1,13 @@
 #!/bin/bash
-port=81
 
-echo -n "Buffer size(B): "
+trap 'pkill -9 tas; exit' TERM
+
+tas_dir=/home/yihan-18/tas
+socket_dir=/home/yihan-18/socket_test
+
+start_port=81
+
+echo -n "Buffer size(s): "
 read buff_size
 #buff_size=1024
 
@@ -9,71 +15,55 @@ echo -n "Number of CPU cores: "
 read num_cores
 #num_cores=1
 
+echo -n "Number of server fast path cores: "
+read num_server_fp
+
 echo -n "Total test time(s): "
 read test_time
+#test_time=60
 
-make clean && make
+#echo -n "number of connections: "
+#read num_connection
+
+#echo -n "core to bind: "
+#read core_id
 
 rm throughput_*.txt
 
-# dir="/proc/irq/"
-# file_list=`ls $dir`
+if [[ "$bind_fast_path" == *"yes"* ]];then
+    echo " >> binding thread with fast path core"
+    eval_tas_bind=1
+    eval_tas_sep=0
+else
+    eval_tas_bind=0
+    eval_tas_sep=1
+fi
 
-# new_cpu_mask=0
+make clean && make
 
-# for i in $(seq 1 $num_cores); do
-#     cpu_id=$(( 1<<i ))
-#     new_cpu_mask=$(( new_cpu_mask|cpu_id ))
-# done
-
-# printf "Setting new cpu mask to %x\n" $new_cpu_mask
-
-# old_cpu_mask=fffff
-
-# for file in $file_list
-# do 
-#     file_path=$dir$file
-#     if [[ $file == "default_smp_affinity" ]] ; then
-#         # printf "Setting new cpu mask to %s\n" $file_path
-#         echo $new_cpu_mask > $file_path
-#     fi
-#     if [[ -d $file_path ]] ; then
-#         file_name="smp_affinity"
-#         file_path="${file_path}/${file_name}"
-#         # printf "Setting new cpu mask to %s\n" $file_path
-#         echo $new_cpu_mask > $file_path
-#     fi
-# done
-
-for j in $(seq 0 13)
+for j in $(seq 0 14)
 do
+    
     num_connection=`echo "2^$j" | bc `
 
     echo "Testing RTT for $num_connection connections..."
 
-    # ifconfig enp1s0f0 10.0.1.1 netmask 255.255.255.0
+    #$tas_dir/tas/tas --ip-addr=10.0.0.1/24 --fp-cores-max=$num_server_fp --dpdk-extra=-b --dpdk-extra=01:00.1 &
+    $tas_dir/tas/tas --ip-addr=10.0.0.1/24 --fp-cores-max=$num_server_fp &
 
-    ./server    --size=$buff_size \
-                --time=$test_time \
-                --port=$port \
-                --num_cores=$num_cores
+    sleep 15
+
+    LD_PRELOAD=$tas_dir/lib/libtas_interpose.so $socket_dir/server \
+                    --size=$buff_size \
+                    --time=$test_time \
+                    --core_id=$i \
+                    --num_server_fp=$num_server_fp 
+
+    echo "Test done"
+
+    pkill -9 tas
 
     wait
 
-    echo "Test done"
+    sleep 2
 done
-
-# for file in $file_list
-# do 
-#     file_path=$dir$file
-#     if [[ $file == "default_smp_affinity" ]] ; then
-#         # printf "Restoring cpu mask to %s\n" $file_path
-#         echo $old_cpu_mask > $file_path
-#     fi
-#     if [[ -d $file_path ]] ; then
-#         file_name="smp_affinity"
-#         file_path="${file_path}/${file_name}"
-#         # printf "Restoring cpu mask to %s\n" $file_path
-#         echo $old_cpu_mask > $file_path
-#     fi
-# done
