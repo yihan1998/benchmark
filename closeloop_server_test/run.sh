@@ -2,10 +2,9 @@
 
 trap 'pkill -9 tas; exit' TERM
 
-tas_dir=/home/yihan-18/tas
-socket_dir=/home/yihan-18/socket_test
+tas_dir=/home/yihan/tas
 
-start_port=81
+port=81
 
 echo -n "Buffer size(s): "
 read buff_size
@@ -43,11 +42,11 @@ do
 
     sleep 15
 
-    LD_PRELOAD=$tas_dir/lib/libtas_interpose.so $socket_dir/server \
+    LD_PRELOAD=$tas_dir/lib/libtas_interpose.so ./server \
                     --size=$buff_size \
                     --time=$test_time \
-                    --core_id=$i \
-                    --num_server_fp=$num_server_fp 
+                    --port=$port \
+                    --num_cores=$num_cores 
 
     echo "Test done"
 
