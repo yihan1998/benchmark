@@ -321,7 +321,7 @@ int main(int argc, char ** argv) {
             printf(" >> evaluation time: %d\n", eval_time);
         }else if(sscanf(argv[i], "--num_cores=%llu%c", &n, &junk) == 1) {
             num_cores = n;
-            printf(" >> number of cores: %d\n", core_id);
+            printf(" >> number of cores: %d\n", num_cores);
         }else if(sscanf(argv[i], "--num_server_fp=%d%c", &num_server_fp, &junk) == 1) {
             printf(" >> number of server fast path core: %d\n", num_server_fp);
         }else if(i > 0){
