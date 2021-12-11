@@ -1,5 +1,9 @@
 #!/bin/bash
 
+trap 'pkill -9 tas; exit' TERM
+
+tas_dir=/home/yihan/tas
+
 server_ip='10.0.0.1'
 server_port=81
 
@@ -20,9 +24,6 @@ read num_client_fp
 echo -n "Number of CPU cores on server side: "
 read num_server_core
 
-echo -n "Record Round Trip Time[yes/no]?: "
-read record_rtt
-
 if [[ "$record_rtt" == *"yes"* ]];then
     echo " >> evaluting Round Trip Time"
     eval_rtt=1
@@ -30,9 +31,9 @@ else
     eval_rtt=0
 fi
 
-rm rtt_*.txt
+rm throughput_*.txt rtt_*.txt
 
-make clean && make RTT=$eval_rtt
+make clean && make
 
 for j in $(seq 0 13)
 do
@@ -49,7 +50,9 @@ do
 
     echo "Testing RTT for $total_conn connections on $num_cores core(s), each have $num_flow connection(s) ..."
     
-    # ifconfig enp1s0f0 10.0.1.2 netmask 255.255.255.0
+    $tas_dir/tas/tas --ip-addr=10.0.0.2/24 --fp-cores-max=$num_client_fp &
+
+    sleep 20
 
     LD_PRELOAD=$tas_dir/lib/libtas_interpose.so ./client \
                 --server_ip=$server_ip \

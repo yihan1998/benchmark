@@ -32,14 +32,13 @@ rm throughput_*.txt
 
 make clean && make
 
-for j in $(seq 0 14)
+for j in $(seq 0 13)
 do
     
     num_connection=`echo "2^$j" | bc `
 
     echo "Testing RTT for $num_connection connections..."
 
-    #$tas_dir/tas/tas --ip-addr=10.0.0.1/24 --fp-cores-max=$num_server_fp --dpdk-extra=-b --dpdk-extra=01:00.1 &
     $tas_dir/tas/tas --ip-addr=10.0.0.1/24 --fp-cores-max=$num_server_fp &
 
     sleep 15
