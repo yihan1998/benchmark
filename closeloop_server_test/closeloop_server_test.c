@@ -133,24 +133,11 @@ void * server_thread(void * arg) {
 	int thread_id = args->thread_id;
 	int core_id = args->core_id;
 
-#if defined(EVAL_TAS_BIND) || defined(EVAL_TAS_SEP)
-    int server_port = core_id << 12;
-    printf(" [%s] test tas: listening to port %x\n", __func__, server_port);
-#else
     int server_port = args->port;
-    printf(" [%s] test linux: listening to port %x\n", __func__, server_port);
-#endif
+    printf(" [%s] listening to port %x\n", __func__, server_port);
 
-#if defined(EVAL_TAS_BIND)
-    int bind_core = core_id;
-    printf(" [%s] test tas bind: bind to core %d\n", __func__, bind_core);
-#elif defined(EVAL_TAS_SEP)
-    int bind_core = core_id + num_server_fp;
-    printf(" [%s] test tas seperate: bind to core %d\n", __func__, bind_core);
-#else
-    int bind_core = core_id;
-    printf(" [%s] test linux: bind to core %d\n", __func__, bind_core);
-#endif
+    int bind_core = core_id + num_server_fp + 1;
+    printf(" [%s] bind to core %d\n", __func__, bind_core);
 
     cpu_set_t core_set;
 

@@ -30,15 +30,6 @@ read test_time
 
 rm throughput_*.txt
 
-if [[ "$bind_fast_path" == *"yes"* ]];then
-    echo " >> binding thread with fast path core"
-    eval_tas_bind=1
-    eval_tas_sep=0
-else
-    eval_tas_bind=0
-    eval_tas_sep=1
-fi
-
 make clean && make
 
 for j in $(seq 0 14)

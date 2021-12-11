@@ -20,7 +20,6 @@ __thread int core_id;
 
 int num_server_core;
 
-int num_server_fp;
 int num_client_fp;
 
 __thread char * input_file;
@@ -257,16 +256,8 @@ void * RunClientThread(void * argv) {
     printf(" [%s] test linux: connecting to port %x\n", __func__, server_port);
 #endif
 
-#if defined(EVAL_TAS_BIND)
-    int bind_core = core_id + 1;
-    printf(" [%s] test tas bind: bind to core %d\n", __func__, bind_core);
-#elif defined(EVAL_TAS_SEP)
     int bind_core = core_id + num_client_fp + 1;
-    printf(" [%s] test tas seperate: bind to core %d\n", __func__, bind_core);
-#else
-    int bind_core = core_id;
-    printf(" [%s] test linux: bind to core %d\n", __func__, bind_core);
-#endif
+    printf(" [%s] bind to core %d\n", __func__, bind_core);
 
     cpu_set_t core_set;
 
@@ -400,8 +391,6 @@ int main(int argc, char * argv[]) {
             printf(" >> server port: %d\n", server_port);
         }else if(sscanf(argv[i], "--num_server_core=%d%c", &num_server_core, &junk) == 1) {
             printf(" >> number of server core: %d\n", num_server_core);
-        }else if(sscanf(argv[i], "--num_server_fp=%d%c", &num_server_fp, &junk) == 1) {
-            printf(" >> number of server fast path core: %d\n", num_server_fp);
         }else if(sscanf(argv[i], "--num_client_fp=%d%c", &num_client_fp, &junk) == 1) {
             printf(" >> number of client fast path core: %d\n", num_client_fp);
         }else if(i > 0) {

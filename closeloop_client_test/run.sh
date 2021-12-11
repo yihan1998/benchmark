@@ -14,6 +14,9 @@ read test_time
 #echo -n "number of CPU cores: "
 #read num_core
 
+echo -n "Number of client fast path cores: "
+read num_client_fp
+
 echo -n "Number of CPU cores on server side: "
 read num_server_core
 
@@ -48,9 +51,11 @@ do
     
     # ifconfig enp1s0f0 10.0.1.2 netmask 255.255.255.0
 
-    ./client    --server_ip=$server_ip \
+    LD_PRELOAD=$tas_dir/lib/libtas_interpose.so ./client \
+                --server_ip=$server_ip \
                 --server_port=$server_port \
                 --num_server_core=$num_server_core \
+                --num_client_fp=$num_client_fp \
                 --size=$buff_size \
                 --time=$test_time \
                 --num_flow=$num_flow \
