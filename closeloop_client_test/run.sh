@@ -68,6 +68,10 @@ do
 
     echo "Test done"
 
+    pkill -9 tas
+
+    wait
+
     sleep 5
 
     if [ $eval_rtt -eq 1 ]
