@@ -46,9 +46,10 @@ do
                     --size=$buff_size \
                     --time=$test_time \
                     --port=$port \
-                    --num_cores=$num_cores 
+                    --num_cores=$num_cores  &
+    pid=$!
     
-    wait
+    wait $pid
 
     echo "Test done"
 
