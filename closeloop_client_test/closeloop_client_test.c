@@ -340,6 +340,7 @@ void * RunClientThread(void * argv) {
             if ((events[i].events & EPOLLIN) && var->type == TIMER_VAR && var->sockfd == timerfd) {   
                 printf(" >> Time's up\n");
                 handle_timeup_event(epfd, timerfd);
+                printf(" num complete: %d, num flow: %d\n", num_complete, num_flow);
                 if (num_complete == num_flow) {
                     printf(" >> All connections are closed\n");
                     done = 1;
