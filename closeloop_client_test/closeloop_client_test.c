@@ -341,6 +341,7 @@ void * RunClientThread(void * argv) {
                 printf(" >> Time's up\n");
                 handle_timeup_event(epfd, timerfd);
                 if (num_complete == num_flow) {
+                    printf(" >> All connections are closed\n");
                     done = 1;
                     break;
                 }
