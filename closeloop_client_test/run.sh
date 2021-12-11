@@ -62,9 +62,10 @@ do
                 --size=$buff_size \
                 --time=$test_time \
                 --num_flow=$num_flow \
-                --num_cores=$num_cores 
-
-    wait
+                --num_cores=$num_cores &
+    pid=$!
+    
+    wait $pid
 
     echo "Test done"
 
