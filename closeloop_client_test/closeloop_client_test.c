@@ -360,7 +360,7 @@ void * RunClientThread(void * argv) {
         }
     }
     
-    sleep(1);
+    printf(" Closeloop test done!\n");
 
     pthread_exit(NULL);
 
