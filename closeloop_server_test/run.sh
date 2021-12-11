@@ -43,6 +43,7 @@ do
     sleep 15
 
     LD_PRELOAD=$tas_dir/lib/libtas_interpose.so ./server \
+                    --num_server_fp=$num_server_fp \
                     --size=$buff_size \
                     --time=$test_time \
                     --port=$port \
