@@ -258,24 +258,24 @@ double PerformTransaction(struct thread_context * ctx, struct mtcp_epoll_event *
         }
     }
 
-    fprintf(stdout, " # Transaction: %llu\n", oks);
+    fprintf(stderr, " # Transaction: %llu\n", oks);
 
     duration = timer.End();
 
     char output[256];
 
-    char output_file_name[32];
-	sprintf(output_file_name, "throughput_core_%d.txt", ctx->core_id);
-	FILE * output_file = fopen(output_file_name, "a+");
+    // char output_file_name[32];
+	// sprintf(output_file_name, "throughput_core_%d.txt", ctx->core_id);
+	// FILE * output_file = fopen(output_file_name, "a+");
 
     sprintf(output, " [core %d] # Transaction throughput : %.2f (KTPS) \t %s \t %d\n", \
                 ctx->core_id, oks / duration / 1000, (*ctx->props)["file"].c_str(), num_conn);
 
-    fprintf(stdout, "%s", output);
-    fflush(stdout);
+    fprintf(stderr, "%s", output);
+    fflush(stderr);
 
-    fprintf(output_file, "%s", output);
-	fclose(output_file);
+    // fprintf(output_file, "%s", output);
+	// fclose(output_file);
 
     return duration;
 }
