@@ -316,13 +316,13 @@ void * client_thread(void * arg) {
 
     char output[256];
 
-    char output_file_name[32];
-	sprintf(output_file_name, "throughput_core_%d.txt", core_id);
+    // char output_file_name[32];
+	// sprintf(output_file_name, "throughput_core_%d.txt", core_id);
 
-	FILE * output_file = fopen(output_file_name, "a+");
-    if (!output_file) {
-        perror("Failed to open output file");
-    }
+	// FILE * output_file = fopen(output_file_name, "a+");
+    // if (!output_file) {
+    //     perror("Failed to open output file");
+    // }
     
     sprintf(output, " [core %d] # Transaction throughput : %.2f (KTPS) \t %s \t %d\n", \
                     core_id, operation_total_ops / transaction_duration / 1000, \
@@ -331,8 +331,8 @@ void * client_thread(void * arg) {
     fprintf(stdout, "%s", output);
     fflush(stdout);
 
-    fprintf(output_file, "%s", output);
-	fclose(output_file);
+    // fprintf(output_file, "%s", output);
+	// fclose(output_file);
 }
 
 int main(const int argc, const char *argv[]) {
