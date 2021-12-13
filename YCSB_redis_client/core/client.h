@@ -94,11 +94,13 @@ class Client {
         
         virtual ~Client() { }
     
+        size_t lastScanLen_;
+
     protected:
     
         virtual int ReadRequest(char * request);
         virtual int ReadModifyWriteRequest(char * request);
-        virtual int ScanRequest(KVRequest &request);
+        virtual int ScanRequest(char * request, int cursor, int count);
         virtual int UpdateRequest(char * request);
         virtual int InsertRequest(char * request);
 
@@ -146,7 +148,8 @@ inline int Client::SendRequest(char * obuf) {
             len = InsertRequest(obuf);
             break;
         case SCAN:
-            status = ScanRequest(obuf);
+            lastScanLen_ = workload_.NextScanLength();
+            len = ScanRequest(obuf, 0, lastScanLen_);
             break;
         case READMODIFYWRITE:
             len = ReadModifyWriteRequest(obuf);
@@ -274,8 +277,8 @@ inline int Client::ReadModifyWriteRequest(char * request) {
     return len;
 }
 
-inline int Client::ScanRequest(KVRequest &request) {
-const std::string &key = workload_.NextTransactionKey();
+inline int Client::ScanRequest(char * request, int cursor, int record_count) {
+    const std::string &key = workload_.NextTransactionKey();
 
     std::string cmd("SCAN");
     std::string count("COUNT");
@@ -298,22 +301,6 @@ const std::string &key = workload_.NextTransactionKey();
 }
 
 inline int Client::UpdateRequest(char * request) {
-    // const std::string &table = workload_.NextTable();
-    // const std::string &key = workload_.NextTransactionKey();
-
-    // std::string value;
-    // workload_.BuildUpdate(value);
-    
-    // request.op = UPDATE;
-
-    // strncpy(request.table, table.c_str(), TABLE_NAME_SIZE);
-    // strncpy(request.request.first, key.c_str(), KEY_SIZE);
-    // strncpy(request.request.second, value.c_str(), VALUE_SIZE);
-    
-    // std::cout <<  " Update table: " <<  table.c_str() << ", key: " << key.c_str() << ", value: " << value.c_str() << "\n" << std::endl;
-    
-    // return DB::kOK;
-
     const std::string &table = workload_.NextTable();
     std::string key = workload_.NextSequenceKey();
     std::string value;
