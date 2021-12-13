@@ -215,7 +215,6 @@ double PerformTransaction(struct thread_context * ctx, struct mtcp_epoll_event *
 
                 struct reply * reply = getReply(info->ibuf, info->ioff);
                 if (!reply) {
-                    freeReply(reply);
                     continue;
                 }
 
@@ -232,6 +231,8 @@ double PerformTransaction(struct thread_context * ctx, struct mtcp_epoll_event *
                         done = 1;
                     }
                 }
+
+                freeReply(reply);
 
                 struct mtcp_epoll_event ev;
                 ev.events = MTCP_EPOLLIN | MTCP_EPOLLOUT;
