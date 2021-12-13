@@ -344,7 +344,7 @@ int main(const int argc, const char *argv[]) {
 
     int num_cores = atoi(props.GetProperty("num_cores", "1").c_str());
 
-    pid_t threads[16];
+    pthread_t threads[16];
 
     for (int i = 0; i < num_cores; i++) {
     	int * core_id = (int *)malloc(sizeof(int));
