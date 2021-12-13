@@ -195,7 +195,7 @@ double PerformTransaction(int epfd, struct epoll_event * events, ycsbc::Client &
             
             if ((events[i].events & EPOLLIN)) {
                 int len = read(info->sockfd, info->ibuf + info->ioff, 1024*16 - info->ioff);
-                printf(" [%s:%d] receive len: %d, ioff: %d\n", __func__, __LINE__, len, info->ioff);
+                // printf(" [%s:%d] receive len: %d, ioff: %d\n", __func__, __LINE__, len, info->ioff);
                 // printf(" \t received: %*.s\n", len, info->ibuf + info->ioff);
 
                 if (len > 0) {
@@ -209,7 +209,7 @@ double PerformTransaction(int epfd, struct epoll_event * events, ycsbc::Client &
                 }
                 
                 // printf(" [%s:%d] receive reply: %s", __func__, __LINE__, info->ibuf);
-                printf(" [%s:%d] reply length: %d\n", __func__, __LINE__, len);
+                // printf(" [%s:%d] reply length: %d\n", __func__, __LINE__, len);
 
                 client.ReceiveReply(info->ibuf);
 
