@@ -19,27 +19,25 @@ endif
 # mtcp library and header 
 SRC_FLD    = /home/yihan/mtcp
 
-MTCP_FLD	= $(SRC_FLD)/mtcp
-MTCP_INC    = -I${MTCP_FLD}/include -I${MTCP_FLD}/src/include
-MTCP_LIB    = -L${MTCP_FLD}/lib
+# mtcp library and header 
+MTCP_FLD    =/home/yihan/mtcp/mtcp
+MTCP_INC    =-I${MTCP_FLD}/include -I${MTCP_FLD}/src/include
+MTCP_LIB    =-L${MTCP_FLD}/lib
 MTCP_TARGET = ${MTCP_LIB}/libmtcp.a
 
-UTIL_FLD 	= $(SRC_FLD)/util
-UTIL_INC 	= -I${UTIL_FLD}/include
-UTIL_OBJ 	= ${UTIL_FLD}/http_parsing.o ${UTIL_FLD}/tdate_parse.o ${UTIL_FLD}/netlib.o
+UTIL_FLD = /home/yihan/mtcp/util
+UTIL_INC = -I${UTIL_FLD}/include
+UTIL_OBJ = ${UTIL_FLD}/http_parsing.o ${UTIL_FLD}/tdate_parse.o ${UTIL_FLD}/netlib.o
 
 # util library and header
-INC 		= -I./ ${UTIL_INC} ${MTCP_INC}
-LIBS 		= ${MTCP_LIB} -lpthread 
+INC = -I./include/ ${UTIL_INC} ${MTCP_INC} -I${UTIL_FLD}/include -I/home/yihan/mtcp/io_engine/include
+LIBS = -g -O3 -pthread -lrt -march=native ${MTCP_FLD}/lib/libmtcp.a -lnuma -lmtcp -lpthread -lrt -ldl -lgmp ${MTCP_LIB} -lpthread 
 
-# dpdk-specific variables
-ifeq ($(DPDK),1)
-DPDK_MACHINE_LINKER_FLAGS	=${RTE_SDK}/${RTE_TARGET}/lib/ldflags.txt
-DPDK_MACHINE_LDFLAGS		=$(shell cat ${DPDK_MACHINE_LINKER_FLAGS})
-DPDK_INC	= ${RTE_SDK}/${RTE_TARGET}/include
-INC			+= -I$(SRC_FLD)/io_engine/include -I${DPDK_INC} 
-LIBS		+= -g -O3 -pthread -lrt -march=native ${MTCP_FLD}/lib/libmtcp.a -lnuma -lmtcp -lpthread -lrt -ldl -lgmp -L${RTE_SDK}/${RTE_TARGET}/lib ${DPDK_MACHINE_LDFLAGS}
-endif
+# DPDK
+LIBDPDK_CFLAGS := $(shell pkg-config --cflags libdpdk)
+LIBDPDK_LDFLAGS := $(shell pkg-config --libs libdpdk)
+CFLAGS += $(LIBDPDK_CFLAGS)
+LIBS += $(LIBDPDK_LDFLAGS)
 
 ifeq ($(CCP), 1)
 # LIBCCP
