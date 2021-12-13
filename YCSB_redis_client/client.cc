@@ -209,7 +209,7 @@ double PerformTransaction(struct thread_context * ctx, struct mtcp_epoll_event *
             if ((events[i].events & MTCP_EPOLLIN)) {
                 int len = mtcp_read(ctx->mctx, info->sockfd, info->ibuf + info->ioff, 1024*16 - info->ioff);
 
-                if (ret > 0) {
+                if (len > 0) {
                     info->ioff += len;
                     fprintf(stdout, " >> recv : %s", info->ibuf);
                 }
