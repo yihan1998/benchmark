@@ -120,6 +120,7 @@ double LoadRecord(struct thread_context * ctx, struct mtcp_epoll_event * events,
 
                 if (len > 0) {
                     info->ioff += len;
+                    fprintf(stdout, " >> recv : %s", info->ibuf);
                 }
 
                 if (strchr(info->ibuf,'\n')) {
