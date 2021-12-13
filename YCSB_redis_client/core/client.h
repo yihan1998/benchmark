@@ -79,7 +79,7 @@ class KVRequest {
 
         Operation op;
         char table[TABLE_NAME_SIZE];
-        std::pair<char[KEY_SIZE], char[VALUE_SIZE]> request;
+        std::pair<char[100], char[100]> request;
 };
 
 class KVReply {
@@ -89,7 +89,7 @@ class KVReply {
 
         Operation op;
         int return_val;
-        std::pair<char[KEY_SIZE], char[VALUE_SIZE]> result;
+        std::pair<char[100], char[100]> result;
 };
 
 class Client {
@@ -101,16 +101,20 @@ class Client {
         virtual int SendRequest(char * obuf);
         virtual int ReceiveReply(char * ibuf);
 
-        virtual int ConnectServer(mctx_t mctx, const std::string &ip, int port);
-        virtual int HandleErrorEvent(mctx_t mctx, struct conn_info * info);
-
+        virtual int ConnectServer(const std::string &ip, int port);
+        virtual int HandleReadEvent(struct conn_info * info);
+        virtual int HandleWriteEvent(struct conn_info * info);
+        virtual int HandleErrorEvent(struct conn_info * info);
+        
         virtual ~Client() { }
     
+        size_t lastScanLen_;
+
     protected:
     
         virtual int ReadRequest(char * request);
         virtual int ReadModifyWriteRequest(char * request);
-        virtual int ScanRequest(KVRequest &request);
+        virtual int ScanRequest(char * request, int cursor, int count);
         virtual int UpdateRequest(char * request);
         virtual int InsertRequest(char * request);
 
@@ -157,9 +161,10 @@ inline int Client::SendRequest(char * obuf) {
         case INSERT:
             len = InsertRequest(obuf);
             break;
-        // case SCAN:
-        //     status = ScanRequest(obuf);
-        //     break;
+        case SCAN:
+            lastScanLen_ = workload_.NextScanLength();
+            len = ScanRequest(obuf, 0, lastScanLen_);
+            break;
         case READMODIFYWRITE:
             len = ReadModifyWriteRequest(obuf);
             break;
@@ -175,7 +180,47 @@ inline int Client::ReceiveReply(char * ibuf) {
     return 0;
 }
 
-inline int Client::HandleErrorEvent(mctx_t mctx, struct conn_info * info) {
+inline int Client::HandleReadEvent(struct conn_info * info) {
+    // char buff[BUFF_SIZE];
+
+    // int len = read(info->sockfd, buff, BUFF_SIZE);
+    // printf("%s\n", buff);
+
+    // return len;
+    // KVReply reply;
+    // int len = read(info->sockfd, &reply, sizeof(reply));
+
+    // if (len <= 0) {
+    //     return len;
+    // }
+    
+    // int ret = ReceiveReply(reply);
+
+    // return len;
+    return 0;
+}
+
+inline int Client::HandleWriteEvent(struct conn_info * info) {
+    // char buff[BUFF_SIZE];
+    // sprintf(buff, "Hello from client(%d)", counter++);
+
+    // int len = send(info->sockfd, buff, BUFF_SIZE, 0);
+    // printf("Hello message sent: %s\n", buff);
+
+    // char buff[BUFF_SIZE];
+    // snprintf(buff, sizeof(request), (char *)&request);
+    // std::cout <<  " Send request: " << buff << "\n" << std::endl;
+
+    // KVRequest request;
+    // int ret = SendRequest(request);
+    
+    // int len = write(info->sockfd, &request, sizeof(request));
+
+    // return len;
+    return 0;
+}
+
+inline int Client::HandleErrorEvent(struct conn_info * info) {
     return 0;
 }
 
@@ -246,40 +291,30 @@ inline int Client::ReadModifyWriteRequest(char * request) {
     return len;
 }
 
-inline int Client::ScanRequest(KVRequest &request) {
-    const std::string &table = workload_.NextTable();
+inline int Client::ScanRequest(char * request, int cursor, int record_count) {
     const std::string &key = workload_.NextTransactionKey();
-    int len = workload_.NextScanLength();
-    std::string record_count = std::to_string(len);
 
-    request.op = SCAN;
+    std::string cmd("SCAN");
+    std::string count("COUNT");
+    std::string cursor_s = std::to_string(cursor);
+    std::string record_count_s = std::to_string(record_count);
+    size_t len = cmd.length() + 1 + cursor_s.length() + 1 + count.length() + 1 + record_count_s.length() + 1;
+    cmd.reserve(len);
 
-    strncpy(request.table, table.c_str(), TABLE_NAME_SIZE);
-    strncpy(request.request.first, key.c_str(), KEY_SIZE);
-    strncpy(request.request.second, record_count.c_str(), VALUE_SIZE);
+    cmd.append(" ").append(cursor_s);
+    cmd.append(" ").append(count);
+    cmd.append(" ").append(record_count_s);
 
-    // std::cout <<  " Scan table: " <<  table.c_str() << ", key: " << key.c_str() << ", record len: " << len << "\n" << std::endl;
-    
-    return DB::kOK;
+    strncpy(request, cmd.c_str(), len);
+
+    // fprintf(stdout, " Scan request: %s\n", request);
+
+    request[len-1] = '\n';
+
+    return len;
 }
 
 inline int Client::UpdateRequest(char * request) {
-    // const std::string &table = workload_.NextTable();
-    // const std::string &key = workload_.NextTransactionKey();
-
-    // std::string value;
-    // workload_.BuildUpdate(value);
-    
-    // request.op = UPDATE;
-
-    // strncpy(request.table, table.c_str(), TABLE_NAME_SIZE);
-    // strncpy(request.request.first, key.c_str(), KEY_SIZE);
-    // strncpy(request.request.second, value.c_str(), VALUE_SIZE);
-    
-    // std::cout <<  " Update table: " <<  table.c_str() << ", key: " << key.c_str() << ", value: " << value.c_str() << "\n" << std::endl;
-    
-    // return DB::kOK;
-
     const std::string &table = workload_.NextTable();
     std::string key = workload_.NextSequenceKey();
     std::string value;
