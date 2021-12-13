@@ -1,6 +1,6 @@
 CXX = g++
 
-SRC_DIR		:= /home/yihan/nus-sys/cygnus
+SRC_DIR		:= /home/yihan/cygnus
 
 RUNTIME_DIR	= $(SRC_DIR)/Cygnus
 THREAD_DIR	= $(SRC_DIR)/mthread
