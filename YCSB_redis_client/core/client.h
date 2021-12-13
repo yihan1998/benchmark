@@ -145,9 +145,9 @@ inline int Client::SendRequest(char * obuf) {
         case INSERT:
             len = InsertRequest(obuf);
             break;
-        // case SCAN:
-        //     status = ScanRequest(obuf);
-        //     break;
+        case SCAN:
+            status = ScanRequest(obuf);
+            break;
         case READMODIFYWRITE:
             len = ReadModifyWriteRequest(obuf);
             break;
