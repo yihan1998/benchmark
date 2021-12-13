@@ -211,7 +211,7 @@ double PerformTransaction(struct thread_context * ctx, struct mtcp_epoll_event *
 
                 if (len > 0) {
                     info->ioff += len;
-                    fprintf(stdout, " >> recv : %s", info->ibuf);
+                    // fprintf(stdout, " >> recv : %s", info->ibuf);
                 }
 
                 struct reply * reply = getReply(info->ibuf, info->ioff);
@@ -242,7 +242,7 @@ double PerformTransaction(struct thread_context * ctx, struct mtcp_epoll_event *
                 if (info->oremain == 0) {
                     info->oremain = client.SendRequest(info->obuf);
                     info->ooff = 0;
-                    // printf(" [%s:%d] new request: %d, %.*s", __func__, __LINE__, info->oremain, info->oremain, info->obuf);
+                    printf(" [%s:%d] new request: %d, %.*s", __func__, __LINE__, info->oremain, info->oremain, info->obuf);
                 }
 
                 int len = mtcp_write(ctx->mctx, info->sockfd, info->obuf + info->ooff, info->oremain);
