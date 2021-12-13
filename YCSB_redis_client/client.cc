@@ -342,17 +342,19 @@ int main(const int argc, const char *argv[]) {
 
     int num_cores = atoi(props.GetProperty("num_cores", "1").c_str());
 
+    pid_t threads[16];
+
     for (int i = 0; i < num_cores; i++) {
     	int * core_id = (int *)malloc(int);
         *core_id = i;
-        if (pthread_create(&thread[i], NULL, server_thread, (void *)core_id) != 0) {
+        if (pthread_create(&threads[i], NULL, client_thread, (void *)core_id) != 0) {
             printf("pthread_create of server thread failed!\n");
             return 0;
         }
     }
     
     for (int i = 0; i < num_cores; i++) {
-		pthread_join(thread[i], NULL);
+		pthread_join(threads[i], NULL);
 	}
 
     return 0;
