@@ -9,7 +9,7 @@ LDFLAGS	= -lpthread -ltbb -lhiredis
 SUBDIRS	= core db redis
 SUBSRCS	= $(wildcard core/*.cc) $(wildcard db/*.cc)
 OBJECTS	= $(SUBSRCS:.cc=.o)
-TARGETS	= YCSB_client
+TARGETS	= YCSB-client
 
 # Add arch-specific optimization
 ifeq ($(shell uname -m),x86_64)
