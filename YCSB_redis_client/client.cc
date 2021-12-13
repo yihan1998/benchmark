@@ -402,7 +402,7 @@ int main(const int argc, const char *argv[]) {
             num_cores = n;
 			printf(" >> core num: %d\n", num_cores);
 			if (num_cores > MAX_CPUS) {
-				fprintf(dtserr, "CPU limit should be smaller than the "
+				fprintf(stderr, "CPU limit should be smaller than the "
 					     "number of CPUs: %d\n", MAX_CPUS);
 				return 0;
 			}
