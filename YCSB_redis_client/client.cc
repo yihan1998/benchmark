@@ -11,6 +11,7 @@
 #include <iostream>
 #include <vector>
 #include <future>
+#include "core/parse.h"
 #include "core/utils.h"
 #include "core/timer.h"
 #include "core/client.h"
