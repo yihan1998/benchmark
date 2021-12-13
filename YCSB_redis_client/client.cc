@@ -231,7 +231,7 @@ double PerformTransaction(int epfd, struct cygnus_epoll_event * events, ycsbc::C
 
                 struct reply * reply = getReply(info->ibuf, info->ioff);
                 if (!reply) {
-                    freeReply(reply);
+                    // freeReply(reply);
                     continue;
                 }
                 
