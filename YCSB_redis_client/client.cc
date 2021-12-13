@@ -205,21 +205,10 @@ double PerformTransaction(struct thread_context * ctx, struct mtcp_epoll_event *
                     info->ioff += len;
                 }
 
-                int to_recv = 0;
-                char recv_buff[1024*16];
-                // if (sscanf(info->ibuf, "$%d\r\n%s\r\n", &to_recv, recv_buff) == 2) {
-                if (sscanf(info->ibuf, "$%d\r\n", &to_recv) == 1) {
-                    // printf(" [%s:%d] to receive len: %d\n", __func__, __LINE__, to_recv);
-                    if (to_recv != -1) {
-                        if (sscanf(info->ibuf, "$%*d\r\n%s\r\n", recv_buff) == 1) {
-                            // printf(" [%s:%d] received len: %d, %.*s\n", __func__, __LINE__, strlen(recv_buff), strlen(recv_buff), recv_buff);
-                            if (to_recv != strlen(recv_buff)) {
-                                continue;
-                            }
-                        }
-                    }
-                } else if (!strcmp(recv_buff, "+OK\r\n")) {
-                    
+                struct reply * reply = getReply(info->ibuf, info->ioff);
+                if (!reply) {
+                    freeReply(reply);
+                    continue;
                 }
 
                 client.ReceiveReply(info->ibuf);
