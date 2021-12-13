@@ -59,7 +59,7 @@ double LoadRecord(int epfd, struct epoll_event * events, ycsbc::Client &client, 
         while(num_conn < num_flows) {
             /* Connect server */
             int sock;
-            if ((sock = client.ConnectServer("127.0.0.1", port)) > 0) {
+            if ((sock = client.ConnectServer("10.0.0.1", port)) > 0) {
                 // fprintf(stdout, " [%s] connect server through sock %d\n", __func__, sock);
                 struct conn_info * conn_info = &info[num_conn];
                 conn_info->sockfd = sock;
