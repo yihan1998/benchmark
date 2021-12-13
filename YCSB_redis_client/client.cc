@@ -126,7 +126,7 @@ double LoadRecord(struct thread_context * ctx, struct mtcp_epoll_event * events,
                     /* Increase actual ops */
                     if(++info->actual_record_ops == info->total_record_ops) {
                         // cerr << " [ sock " << info->sockfd << "] # Loading records " << info->sockfd << " \t" << info->actual_record_ops << flush;
-                        // fprintf(stdout, " [sock %d] # Loading records :\t %lld\n", info->sockfd, info->actual_record_ops);  
+                        fprintf(stdout, " [sock %d] # Loading records :\t %lld\n", info->sockfd, info->actual_record_ops);  
                         if (++num_load_complete == num_conn) {
                             done = 1;
                         }
