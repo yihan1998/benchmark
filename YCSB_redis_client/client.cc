@@ -36,6 +36,9 @@ using namespace std;
 __thread int num_conn = 0;
 __thread struct conn_info * info;
 
+utils::Properties props;
+string file_name;
+
 void UsageMessage(const char *command);
 bool StrStartWith(const char *str, const char *pre);
 string ParseCommandLine(int argc, const char *argv[], utils::Properties &props);
@@ -336,8 +339,7 @@ void * client_thread(void * arg) {
 }
 
 int main(const int argc, const char *argv[]) {
-    utils::Properties props;
-    string file_name = ParseCommandLine(argc, argv, props);
+    file_name = ParseCommandLine(argc, argv, props);
     cout << " Test workload: " << file_name << endl;
 
     int num_cores = atoi(props.GetProperty("num_cores", "1").c_str());
@@ -345,7 +347,7 @@ int main(const int argc, const char *argv[]) {
     pid_t threads[16];
 
     for (int i = 0; i < num_cores; i++) {
-    	int * core_id = (int *)malloc(int);
+    	int * core_id = (int *)malloc(sizeof(int));
         *core_id = i;
         if (pthread_create(&threads[i], NULL, client_thread, (void *)core_id) != 0) {
             printf("pthread_create of server thread failed!\n");
