@@ -98,6 +98,8 @@ double LoadRecord(int epfd, struct cygnus_epoll_event * events, ycsbc::Client * 
     struct timeval log_time;
     gettimeofday(&log_time, NULL);
 
+    cygnus_create_flow(0, 0, 0, 0, port, 0xf000, (lcore_id - 1) << 12, 0xf000);
+
     int sec_send = 0;
     int sec_recv = 0;
 
