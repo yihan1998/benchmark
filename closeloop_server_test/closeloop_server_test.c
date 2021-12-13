@@ -408,20 +408,20 @@ void * test_net(void * arg) {
     sail_init();
     
     /* Create polling thread */
-    // if((ret = mthread_create(&mid, NULL, test_server_thread, arg)) < 0) {
-    //     printf("mthread_create() error: %d\n", ret);
-    //     exit(1);
-    // } else {
-    //     logging(INFO, "[%s on core %d] server_thread create done(mid: %lu)", __func__, lcore_id, mid);
-    // }
+    if((ret = mthread_create(&mid, NULL, test_server_thread, arg)) < 0) {
+        printf("mthread_create() error: %d\n", ret);
+        exit(1);
+    } else {
+        logging(INFO, "[%s on core %d] server_thread create done(mid: %lu)", __func__, lcore_id, mid);
+    }
 
     /* Test mthread_join */
-    // if ((ret = mthread_join(mid, NULL)) < 0) {
-    //     printf("mthread_join() error: %d\n", ret);
-    //     exit(1);
-    // }
+    if ((ret = mthread_join(mid, NULL)) < 0) {
+        printf("mthread_join() error: %d\n", ret);
+        exit(1);
+    }
 
-    server_thread(arg);
+    // server_thread(arg);
 
     logging(INFO, "[%s on core %d] mthread %lu joined!", __func__, lcore_id, mid);
 
