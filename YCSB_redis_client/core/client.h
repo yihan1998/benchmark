@@ -101,10 +101,8 @@ class Client {
         virtual int SendRequest(char * obuf);
         virtual int ReceiveReply(char * ibuf);
 
-        virtual int ConnectServer(const std::string &ip, int port);
-        virtual int HandleReadEvent(struct conn_info * info);
-        virtual int HandleWriteEvent(struct conn_info * info);
-        virtual int HandleErrorEvent(struct conn_info * info);
+        virtual int ConnectServer(mctx_t mctx, const std::string &ip, int port);
+        virtual int HandleErrorEvent(mctx_t mctx, struct conn_info * info);
         
         virtual ~Client() { }
     
@@ -180,47 +178,7 @@ inline int Client::ReceiveReply(char * ibuf) {
     return 0;
 }
 
-inline int Client::HandleReadEvent(struct conn_info * info) {
-    // char buff[BUFF_SIZE];
-
-    // int len = read(info->sockfd, buff, BUFF_SIZE);
-    // printf("%s\n", buff);
-
-    // return len;
-    // KVReply reply;
-    // int len = read(info->sockfd, &reply, sizeof(reply));
-
-    // if (len <= 0) {
-    //     return len;
-    // }
-    
-    // int ret = ReceiveReply(reply);
-
-    // return len;
-    return 0;
-}
-
-inline int Client::HandleWriteEvent(struct conn_info * info) {
-    // char buff[BUFF_SIZE];
-    // sprintf(buff, "Hello from client(%d)", counter++);
-
-    // int len = send(info->sockfd, buff, BUFF_SIZE, 0);
-    // printf("Hello message sent: %s\n", buff);
-
-    // char buff[BUFF_SIZE];
-    // snprintf(buff, sizeof(request), (char *)&request);
-    // std::cout <<  " Send request: " << buff << "\n" << std::endl;
-
-    // KVRequest request;
-    // int ret = SendRequest(request);
-    
-    // int len = write(info->sockfd, &request, sizeof(request));
-
-    // return len;
-    return 0;
-}
-
-inline int Client::HandleErrorEvent(struct conn_info * info) {
+inline int Client::HandleErrorEvent(mctx_t mctx, struct conn_info * info) {
     return 0;
 }
 
