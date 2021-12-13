@@ -285,8 +285,8 @@ void * client_thread(void * arg) {
 
     int record_total_ops = stoi(props[ycsbc::CoreWorkload::RECORD_COUNT_PROPERTY]) / num_flows;
     int operation_total_ops = stoi(props[ycsbc::CoreWorkload::OPERATION_COUNT_PROPERTY]) / num_flows;
-    fprintf(stdout, " [core %d] # Total records (K) :\t %.2f \n", core_id, (double)record_total_ops / 1000.0);  
-    fprintf(stdout, " [core %d] # Total transactions (K) :\t %.2f\n", core_id, (double)operation_total_ops / 1000.0);  
+    fprintf(stderr, " [core %d] # Total records (K) :\t %.2f \n", core_id, (double)record_total_ops / 1000.0);  
+    fprintf(stderr, " [core %d] # Total transactions (K) :\t %.2f\n", core_id, (double)operation_total_ops / 1000.0);  
 
     // double duration = DelegateClient(db, &wl, record_total_ops, operation_total_ops, num_flows);
 
@@ -328,8 +328,8 @@ void * client_thread(void * arg) {
                     core_id, operation_total_ops / transaction_duration / 1000, \
                     file_name.c_str(), num_flows);
 
-    fprintf(stdout, "%s", output);
-    fflush(stdout);
+    fprintf(stderr, "%s", output);
+    fflush(stderr);
 
     // fprintf(output_file, "%s", output);
 	// fclose(output_file);
