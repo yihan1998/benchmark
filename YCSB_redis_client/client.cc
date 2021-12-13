@@ -211,6 +211,7 @@ double PerformTransaction(struct thread_context * ctx, struct mtcp_epoll_event *
 
                 if (ret > 0) {
                     info->ioff += len;
+                    fprintf(dtsout, " >> recv : %s", info->ibuf);
                 }
 
                 struct reply * reply = getReply(info->ibuf, info->ioff);
@@ -222,7 +223,6 @@ double PerformTransaction(struct thread_context * ctx, struct mtcp_epoll_event *
 
                 info->ioff = 0;
                 oks++;
-                cerr << " [ sock " << info->sockfd << "] # Loading records " << info->sockfd << " \t" << info->actual_record_ops << flush;
 
                 /* Increase actual ops */
                 if(++info->actual_operation_ops == info->total_operation_ops) {                    // fprintf(stdout, " [sock %d] # Loading records :\t %lld\n", info->sockfd, info->actual_record_ops);  
