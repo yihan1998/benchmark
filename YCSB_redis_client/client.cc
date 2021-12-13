@@ -120,12 +120,11 @@ double LoadRecord(struct thread_context * ctx, struct mtcp_epoll_event * events,
 
                 if (len > 0) {
                     info->ioff += len;
-                    fprintf(stdout, " >> recv : %s", info->ibuf);
                 }
 
                 if (strchr(info->ibuf,'\n')) {
                     /* Increase actual ops */
-                    fprintf(stdout, " [sock %d] # Loading records :\t %lld\n", info->sockfd, info->actual_record_ops);  
+                    // fprintf(stdout, " [sock %d] # Loading records :\t %lld\n", info->sockfd, info->actual_record_ops);  
                     if(++info->actual_record_ops == info->total_record_ops) {
                         // cerr << " [ sock " << info->sockfd << "] # Loading records " << info->sockfd << " \t" << info->actual_record_ops << flush;
                         if (++num_load_complete == num_conn) {
@@ -149,7 +148,7 @@ double LoadRecord(struct thread_context * ctx, struct mtcp_epoll_event * events,
                 int len = mtcp_write(ctx->mctx, info->sockfd, info->obuf + info->ooff, info->oremain);
             
                 if(len > 0) {
-                    fprintf(stdout, " [sock %d] # Next record :\t %lld\n", info->sockfd, info->actual_record_ops);  
+                    // fprintf(stdout, " [sock %d] # Next record :\t %lld\n", info->sockfd, info->actual_record_ops);  
                     info->ooff += len;
                     info->oremain -= len;
                     if (info->oremain == 0) {
