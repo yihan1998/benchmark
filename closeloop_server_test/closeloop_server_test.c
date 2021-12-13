@@ -377,18 +377,6 @@ void * server_thread(void * arg) {
     return NULL;
 }
 
-void * test_server_thread(void * arg) {
-    struct timeval start, curr;
-    gettimeofday(&start, NULL);
-
-    do {
-        gettimeofday(&curr, NULL);
-        schedule();
-    } while (curr.tv_sec - start.tv_sec < 60);
-
-    return NULL;
-}
-
 void * test_net(void * arg) {
     cygnus_init((struct cygnus_param *)arg);
 
@@ -408,7 +396,7 @@ void * test_net(void * arg) {
     sail_init();
     
     /* Create polling thread */
-    if((ret = mthread_create(&mid, NULL, test_server_thread, arg)) < 0) {
+    if((ret = mthread_create(&mid, NULL, server_thread, arg)) < 0) {
         printf("mthread_create() error: %d\n", ret);
         exit(1);
     } else {
