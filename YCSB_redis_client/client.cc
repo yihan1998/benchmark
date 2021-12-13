@@ -81,7 +81,7 @@ double LoadRecord(struct thread_context * ctx, struct mtcp_epoll_event * events,
                 // fprintf(stdout, " [%s] connect server through sock %d\n", __func__, sock);
                 struct conn_info * conn_info = &ctx->info[num_conn];
                 conn_info->sockfd = sock;
-                conn_info->epfd = epfd;
+                conn_info->epfd = ctx->epfd;
 
                 conn_info->ibuf = (char *)calloc(16, 1024);
                 conn_info->ioff = 0;
