@@ -9,7 +9,7 @@ TARGET_DIR	= /home/yihan/benchmark/YCSB_redis_client
 HOADRD_DIR	= /home/yihan/Hoard/src
 
 CFLAGS 		:= -O3 -g -fno-stack-protector -Wall -fPIC
-LIBPATH 	:= -I/usr/include/ -I$(TARGET_DIR)/ -I$(RUNTIME_DIR)/include/ -I$(THREAD_DIR)/include/
+LIBPATH 	:= -I./ -I/usr/include/ -I$(TARGET_DIR)/ -I$(RUNTIME_DIR)/include/ -I$(THREAD_DIR)/include/
 CFLAGS 		+= $(LIBPATH)
 
 TARGET		:= YCSB-client
