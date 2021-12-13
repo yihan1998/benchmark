@@ -211,7 +211,7 @@ double PerformTransaction(struct thread_context * ctx, struct mtcp_epoll_event *
 
                 if (ret > 0) {
                     info->ioff += len;
-                    fprintf(dtsout, " >> recv : %s", info->ibuf);
+                    fprintf(stdout, " >> recv : %s", info->ibuf);
                 }
 
                 struct reply * reply = getReply(info->ibuf, info->ioff);
