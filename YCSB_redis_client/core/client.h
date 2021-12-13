@@ -275,20 +275,26 @@ inline int Client::ReadModifyWriteRequest(char * request) {
 }
 
 inline int Client::ScanRequest(KVRequest &request) {
-    const std::string &table = workload_.NextTable();
-    const std::string &key = workload_.NextTransactionKey();
-    int len = workload_.NextScanLength();
-    std::string record_count = std::to_string(len);
+const std::string &key = workload_.NextTransactionKey();
 
-    request.op = SCAN;
+    std::string cmd("SCAN");
+    std::string count("COUNT");
+    std::string cursor_s = std::to_string(cursor);
+    std::string record_count_s = std::to_string(record_count);
+    size_t len = cmd.length() + 1 + cursor_s.length() + 1 + count.length() + 1 + record_count_s.length() + 1;
+    cmd.reserve(len);
 
-    strncpy(request.table, table.c_str(), TABLE_NAME_SIZE);
-    strncpy(request.request.first, key.c_str(), KEY_SIZE);
-    strncpy(request.request.second, record_count.c_str(), VALUE_SIZE);
+    cmd.append(" ").append(cursor_s);
+    cmd.append(" ").append(count);
+    cmd.append(" ").append(record_count_s);
 
-    // std::cout <<  " Scan table: " <<  table.c_str() << ", key: " << key.c_str() << ", record len: " << len << "\n" << std::endl;
-    
-    return DB::kOK;
+    strncpy(request, cmd.c_str(), len);
+
+    // fprintf(stdout, " Scan request: %s\n", request);
+
+    request[len-1] = '\n';
+
+    return len;
 }
 
 inline int Client::UpdateRequest(char * request) {
