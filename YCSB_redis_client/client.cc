@@ -148,6 +148,7 @@ double LoadRecord(struct thread_context * ctx, struct mtcp_epoll_event * events,
                 int len = mtcp_write(ctx->mctx, info->sockfd, info->obuf + info->ooff, info->oremain);
             
                 if(len > 0) {
+                    fprintf(stdout, " [sock %d] # Next record :\t %lld\n", info->sockfd, info->actual_record_ops);  
                     info->ooff += len;
                     info->oremain -= len;
                     if (info->oremain == 0) {
