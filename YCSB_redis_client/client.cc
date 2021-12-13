@@ -265,7 +265,7 @@ double PerformTransaction(struct thread_context * ctx, struct mtcp_epoll_event *
         }
     }
 
-    fprintf(stderr, " # Transaction: %llu\n", oks);
+    fprintf(stdout, " # Transaction: %llu\n", oks);
 
     duration = timer.End();
 
@@ -278,8 +278,8 @@ double PerformTransaction(struct thread_context * ctx, struct mtcp_epoll_event *
     sprintf(output, " [core %d] # Transaction throughput : %.2f (KTPS) \t %s \t %d\n", \
                 ctx->core_id, oks / duration / 1000, (*ctx->props)["file"].c_str(), num_conn);
 
-    fprintf(stderr, "%s", output);
-    fflush(stderr);
+    fprintf(stdout, "%s", output);
+    fflush(stdout);
 
     // fprintf(output_file, "%s", output);
 	// fclose(output_file);
@@ -357,8 +357,8 @@ void * RunClientThread(void * arg) {
 
     int record_total_ops = stoi((*props)[ycsbc::CoreWorkload::RECORD_COUNT_PROPERTY]);
     int operation_total_ops = stoi((*props)[ycsbc::CoreWorkload::OPERATION_COUNT_PROPERTY]);
-    fprintf(stdout, " [core %d] # Total records (K) :\t %.2f \n", core, (double)record_total_ops / 1000.0);  
-    fprintf(stdout, " [core %d] # Total transactions (K) :\t %.2f\n", core, (double)operation_total_ops / 1000.0);  
+    fprintf(stderr, " [core %d] # Total records (K) :\t %.2f \n", core, (double)record_total_ops / 1000.0);  
+    fprintf(stderr, " [core %d] # Total transactions (K) :\t %.2f\n", core, (double)operation_total_ops / 1000.0);  
 
     // double duration = DelegateClient(db, &wl, record_total_ops, operation_total_ops, num_flows);
 
@@ -369,7 +369,7 @@ void * RunClientThread(void * arg) {
     double load_duration = 0.0;
     load_duration = LoadRecord(ctx, events, client, record_total_ops, operation_total_ops, port, num_flows);
 
-    fprintf(stdout, " [core %d] loaded records done! \n", core);  
+    fprintf(stderr, " [core %d] loaded records done! \n", core);  
 
     double transaction_duration = 0.0;
     transaction_duration = PerformTransaction(ctx, events, client);
@@ -402,7 +402,7 @@ int main(const int argc, const char *argv[]) {
             num_cores = n;
 			printf(" >> core num: %d\n", num_cores);
 			if (num_cores > MAX_CPUS) {
-				fprintf(stdout, "CPU limit should be smaller than the "
+				fprintf(dtserr, "CPU limit should be smaller than the "
 					     "number of CPUs: %d\n", MAX_CPUS);
 				return 0;
 			}
@@ -432,13 +432,13 @@ int main(const int argc, const char *argv[]) {
 
 	/* initialize mtcp */
 	if (conf_file == NULL) {
-		fprintf(stdout, "You forgot to pass the mTCP startup config file!\n");
+		fprintf(stderr, "You forgot to pass the mTCP startup config file!\n");
 		exit(EXIT_FAILURE);
 	}
 
 	ret = mtcp_init(conf_file);
 	if (ret) {
-		fprintf(stdout, "Failed to initialize mtcp\n");
+		fprintf(stderr, "Failed to initialize mtcp\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -448,7 +448,7 @@ int main(const int argc, const char *argv[]) {
 	mtcp_register_signal(SIGINT, SignalHandler);
 	mtcp_register_signal(SIGTERM, SignalHandler);
 
-	fprintf(stdout, "Application initialization finished.\n");
+	fprintf(stderr, "Application initialization finished.\n");
 
 	for (int i = ((process_cpu == -1) ? 0 : process_cpu); i < num_cores; i++) {
 		cl_thread_arg[i].core = i;
