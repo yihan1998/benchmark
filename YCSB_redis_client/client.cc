@@ -348,7 +348,7 @@ int main(const int argc, const char *argv[]) {
 
     for (int i = 0; i < num_cores; i++) {
     	int * core_id = (int *)malloc(sizeof(int));
-        *core_id = i;
+        *core_id = i + 2;
         if (pthread_create(&threads[i], NULL, client_thread, (void *)core_id) != 0) {
             printf("pthread_create of server thread failed!\n");
             return 0;
