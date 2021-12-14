@@ -207,7 +207,7 @@ double PerformTransaction(int epfd, struct epoll_event * events, ycsbc::Client &
 
                 struct reply * reply = getReply(info->ibuf, info->ioff);
                 if (!reply) {
-                    freeReply(reply);
+                    // freeReply(reply);
                     continue;
                 }
                 
