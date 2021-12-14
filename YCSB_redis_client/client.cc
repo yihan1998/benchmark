@@ -36,6 +36,9 @@ using namespace std;
 __thread int num_conn = 0;
 __thread struct conn_info * info;
 
+utils::Properties props;
+string file_name;
+
 void UsageMessage(const char *command);
 bool StrStartWith(const char *str, const char *pre);
 string ParseCommandLine(int argc, const char *argv[], utils::Properties &props);
@@ -59,7 +62,7 @@ double LoadRecord(int epfd, struct epoll_event * events, ycsbc::Client &client, 
         while(num_conn < num_flows) {
             /* Connect server */
             int sock;
-            if ((sock = client.ConnectServer("127.0.0.1", port)) > 0) {
+            if ((sock = client.ConnectServer("10.0.0.1", port)) > 0) {
                 // fprintf(stdout, " [%s] connect server through sock %d\n", __func__, sock);
                 struct conn_info * conn_info = &info[num_conn];
                 conn_info->sockfd = sock;
@@ -195,7 +198,7 @@ double PerformTransaction(int epfd, struct epoll_event * events, ycsbc::Client &
             
             if ((events[i].events & EPOLLIN)) {
                 int len = read(info->sockfd, info->ibuf + info->ioff, 1024*16 - info->ioff);
-                printf(" [%s:%d] receive len: %d, ioff: %d\n", __func__, __LINE__, len, info->ioff);
+                // printf(" [%s:%d] receive len: %d, ioff: %d\n", __func__, __LINE__, len, info->ioff);
                 // printf(" \t received: %*.s\n", len, info->ibuf + info->ioff);
 
                 if (len > 0) {
@@ -209,7 +212,7 @@ double PerformTransaction(int epfd, struct epoll_event * events, ycsbc::Client &
                 }
                 
                 // printf(" [%s:%d] receive reply: %s", __func__, __LINE__, info->ibuf);
-                printf(" [%s:%d] reply length: %d\n", __func__, __LINE__, len);
+                // printf(" [%s:%d] reply length: %d\n", __func__, __LINE__, len);
 
                 client.ReceiveReply(info->ibuf);
 
@@ -267,12 +270,8 @@ double PerformTransaction(int epfd, struct epoll_event * events, ycsbc::Client &
     return duration;
 }
 
-int main(const int argc, const char *argv[]) {
-    utils::Properties props;
-    string file_name = ParseCommandLine(argc, argv, props);
-    cout << " Test workload: " << file_name << endl;
-
-    int core_id = atoi(props.GetProperty("core_id", "1").c_str());
+void * client_thread(void * arg) {
+    int core_id = *(int *)arg;
 
     cpu_set_t core_set;
     CPU_ZERO(&core_set);
@@ -287,10 +286,10 @@ int main(const int argc, const char *argv[]) {
 
     const int num_flows = stoi(props.GetProperty("flows", "1"));
 
-    int record_total_ops = stoi(props[ycsbc::CoreWorkload::RECORD_COUNT_PROPERTY]);
-    int operation_total_ops = stoi(props[ycsbc::CoreWorkload::OPERATION_COUNT_PROPERTY]);
-    fprintf(stdout, " [core %d] # Total records (K) :\t %.2f \n", core_id, (double)record_total_ops / 1000.0);  
-    fprintf(stdout, " [core %d] # Total transactions (K) :\t %.2f\n", core_id, (double)operation_total_ops / 1000.0);  
+    int record_total_ops = stoi(props[ycsbc::CoreWorkload::RECORD_COUNT_PROPERTY]) / num_flows;
+    int operation_total_ops = stoi(props[ycsbc::CoreWorkload::OPERATION_COUNT_PROPERTY]) / num_flows;
+    fprintf(stderr, " [core %d] # Total records (K) :\t %.2f \n", core_id, (double)record_total_ops / 1000.0);  
+    fprintf(stderr, " [core %d] # Total transactions (K) :\t %.2f\n", core_id, (double)operation_total_ops / 1000.0);  
 
     // double duration = DelegateClient(db, &wl, record_total_ops, operation_total_ops, num_flows);
 
@@ -320,106 +319,54 @@ int main(const int argc, const char *argv[]) {
 
     char output[256];
 
-    char output_file_name[32];
-	sprintf(output_file_name, "throughput_core_%d.txt", core_id);
+    // char output_file_name[32];
+	// sprintf(output_file_name, "throughput_core_%d.txt", core_id);
 
-	FILE * output_file = fopen(output_file_name, "a+");
-    if (!output_file) {
-        perror("Failed to open output file");
-    }
+	// FILE * output_file = fopen(output_file_name, "a+");
+    // if (!output_file) {
+    //     perror("Failed to open output file");
+    // }
     
     sprintf(output, " [core %d] # Transaction throughput : %.2f (KTPS) \t %s \t %d\n", \
                     core_id, operation_total_ops / transaction_duration / 1000, \
                     file_name.c_str(), num_flows);
 
-    fprintf(stdout, "%s", output);
-    fflush(stdout);
+    fprintf(stderr, "%s", output);
+    fflush(stderr);
 
-    fprintf(output_file, "%s", output);
-	fclose(output_file);
+    // fprintf(output_file, "%s", output);
+	// fclose(output_file);
+}
+
+int main(const int argc, const char *argv[]) {
+    file_name = ParseCommandLine(argc, argv, props);
+    cout << " Test workload: " << file_name << endl;
+
+    int num_cores = atoi(props.GetProperty("num_cores", "1").c_str());
+
+    pthread_t threads[16];
+
+    for (int i = 0; i < num_cores; i++) {
+    	int * core_id = (int *)malloc(sizeof(int));
+        *core_id = i;
+        if (pthread_create(&threads[i], NULL, client_thread, (void *)core_id) != 0) {
+            printf("pthread_create of server thread failed!\n");
+            return 0;
+        }
+    }
+    
+    for (int i = 0; i < num_cores; i++) {
+		pthread_join(threads[i], NULL);
+	}
 
     return 0;
 }
-
-// string ParseCommandLine(int argc, const char *argv[], utils::Properties &props) {
-//     int argindex = 1;
-//     string filename;
-//     while (argindex < argc && StrStartWith(argv[argindex], "-")) {
-//         if (strcmp(argv[argindex], "-flows") == 0) {
-//             argindex++;
-//             if (argindex >= argc) {
-//                 UsageMessage(argv[0]);
-//                 exit(0);
-//             }
-//             props.SetProperty("flows", argv[argindex]);
-//             argindex++;
-//         } else if (strcmp(argv[argindex], "-db") == 0) {
-//             argindex++;
-//             if (argindex >= argc) {
-//                 UsageMessage(argv[0]);
-//                 exit(0);
-//             }
-//             props.SetProperty("dbname", argv[argindex]);
-//             argindex++;
-//         } else if (strcmp(argv[argindex], "-host") == 0) {
-//             argindex++;
-//             if (argindex >= argc) {
-//                 UsageMessage(argv[0]);
-//                 exit(0);
-//             }
-//             props.SetProperty("host", argv[argindex]);
-//             argindex++;
-//         } else if (strcmp(argv[argindex], "-port") == 0) {
-//             argindex++;
-//             if (argindex >= argc) {
-//                 UsageMessage(argv[0]);
-//                 exit(0);
-//             }
-//             props.SetProperty("port", argv[argindex]);
-//             argindex++;
-//         } else if (strcmp(argv[argindex], "-slaves") == 0) {
-//             argindex++;
-//             if (argindex >= argc) {
-//                 UsageMessage(argv[0]);
-//                 exit(0);
-//             }
-//             props.SetProperty("slaves", argv[argindex]);
-//             argindex++;
-//         } else if (strcmp(argv[argindex], "-P") == 0) {
-//             argindex++;
-//             if (argindex >= argc) {
-//                 UsageMessage(argv[0]);
-//                 exit(0);
-//             }
-//             filename.assign(argv[argindex]);
-//             ifstream input(argv[argindex]);
-//             try {
-//                 props.Load(input);
-//             } catch (const string &message) {
-//                 cout << message << endl;
-//                 exit(0);
-//             }
-//             input.close();
-//             argindex++;
-//         } else {
-//             cout << "Unknown option '" << argv[argindex] << "'" << endl;
-//             exit(0);
-//         }
-//     }
-
-//     if (argindex == 1 || argindex != argc) {
-//         UsageMessage(argv[0]);
-//         exit(0);
-//     }
-
-//     return filename;
-// }
 
 enum cfg_params {
     PORT,
     WORKLOAD,
     FLOWS,
-    CORE_ID,
+    NUM_CORES,
 };
 
 const struct option options[] = {
@@ -435,10 +382,10 @@ const struct option options[] = {
         .has_arg = required_argument,
         .flag = NULL, 
         .val = FLOWS},
-    {   .name = "core_id", 
+    {   .name = "num_cores", 
         .has_arg = required_argument,
         .flag = NULL, 
-        .val = CORE_ID},
+        .val = NUM_CORES},
 };
 
 string ParseCommandLine(int argc, const char *argv[], utils::Properties &props) {
@@ -466,10 +413,10 @@ string ParseCommandLine(int argc, const char *argv[], utils::Properties &props) 
                 cout.flush();
                 break;
 
-            case CORE_ID:
+            case NUM_CORES:
                 strarg.assign(optarg);
-                props.SetProperty("core_id", strarg);
-                cout << " Core id: " << props["core_id"] << endl;
+                props.SetProperty("num_cores", strarg);
+                cout << " Number of cores: " << props["num_cores"] << endl;
                 cout.flush();
                 break;
 
@@ -491,8 +438,8 @@ string ParseCommandLine(int argc, const char *argv[], utils::Properties &props) 
         }
     }
 
-    fprintf(stdout, " [core %s] port: %s, flows: %s, workload: %s\n", \
-                    props["core_id"].c_str(), props["port"].c_str(), props["flows"].c_str(), filename.c_str());
+    fprintf(stdout, " num_cores: %s, port: %s, flows: %s, workload: %s\n", \
+                    props["num_cores"].c_str(), props["port"].c_str(), props["flows"].c_str(), filename.c_str());
 
     return filename;
 }
